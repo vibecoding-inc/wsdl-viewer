@@ -1,43 +1,114 @@
 <script lang="ts">
-	import { Card, Button, Fileupload, Label, Textarea } from 'flowbite-svelte';
+	import { Card, Button, Fileupload, Label, Textarea, Alert, Spinner } from 'flowbite-svelte';
+	import { ExclamationCircleSolid, CheckCircleSolid } from 'flowbite-svelte-icons';
+	import { wsdlStore, isLoading, errors as storeErrors } from '$lib/stores/wsdl-store';
 
 	let wsdlFile: FileList;
 	let wsdlUrl = '';
 	let wsdlText = '';
+	let parseSuccess = false;
+	let parseError = '';
 
-	function handleFileUpload() {
+	async function handleFileUpload() {
 		if (wsdlFile && wsdlFile[0]) {
-			const reader = new FileReader();
-			reader.onload = (e) => {
-				const result = e.target?.result;
-				if (typeof result === 'string') {
-					wsdlText = result;
-					// TODO: Parse WSDL content (implementation for later)
-					console.log('WSDL file loaded:', wsdlText.substring(0, 100));
-				} else {
-					console.error('Failed to read file as text');
-				}
-			};
-			reader.onerror = () => {
-				console.error('Error reading file');
-			};
-			reader.readAsText(wsdlFile[0]);
+			parseSuccess = false;
+			parseError = '';
+			
+			const result = await wsdlStore.loadFromFile(wsdlFile[0]);
+			
+			if (result.success && result.document) {
+				wsdlText = result.document.rawXml;
+				parseSuccess = true;
+				parseError = '';
+			} else {
+				parseError = result.errors.join('\n');
+				parseSuccess = false;
+			}
 		}
 	}
 
-	function handleLoadFromUrl() {
-		// TODO: Load WSDL from URL (implementation for later)
-		console.log('Load from URL:', wsdlUrl);
+	async function handleLoadFromUrl() {
+		if (!wsdlUrl.trim()) {
+			parseError = 'Please enter a URL';
+			return;
+		}
+		
+		parseSuccess = false;
+		parseError = '';
+		
+		const result = await wsdlStore.loadFromUrl(wsdlUrl);
+		
+		if (result.success && result.document) {
+			wsdlText = result.document.rawXml;
+			parseSuccess = true;
+			parseError = '';
+		} else {
+			parseError = result.errors.join('\n');
+			parseSuccess = false;
+		}
 	}
 
 	function handleParseText() {
-		// TODO: Parse WSDL text (implementation for later)
-		console.log('Parse WSDL text:', wsdlText.substring(0, 100));
+		if (!wsdlText.trim()) {
+			parseError = 'Please enter WSDL content';
+			return;
+		}
+		
+		parseSuccess = false;
+		parseError = '';
+		
+		const result = wsdlStore.parseXml(wsdlText);
+		
+		if (result.success) {
+			parseSuccess = true;
+			parseError = '';
+		} else {
+			parseError = result.errors.join('\n');
+			parseSuccess = false;
+		}
+	}
+	
+	function handleClear() {
+		wsdlFile = undefined as unknown as FileList;
+		wsdlUrl = '';
+		wsdlText = '';
+		parseSuccess = false;
+		parseError = '';
+		wsdlStore.clear();
 	}
 </script>
 
 <Card class="max-w-full">
-	<h5 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">Load WSDL Document</h5>
+	<div class="mb-4 flex items-center justify-between">
+		<h5 class="text-xl font-bold text-gray-900 dark:text-white">Load WSDL Document</h5>
+		{#if parseSuccess}
+			<Button color="alternative" size="sm" onclick={handleClear}>Clear</Button>
+		{/if}
+	</div>
+
+	<!-- Status Messages -->
+	{#if $isLoading}
+		<div class="mb-4 flex items-center gap-2 text-blue-600">
+			<Spinner size="4" />
+			<span>Parsing WSDL...</span>
+		</div>
+	{/if}
+
+	{#if parseError}
+		<Alert color="red" class="mb-4">
+			<ExclamationCircleSolid slot="icon" class="h-5 w-5" />
+			<span class="font-medium">Parse Error</span>
+			<p class="mt-1 whitespace-pre-wrap text-sm">{parseError}</p>
+		</Alert>
+	{/if}
+
+	{#if parseSuccess}
+		<Alert color="green" class="mb-4">
+			<CheckCircleSolid slot="icon" class="h-5 w-5" />
+			<span class="font-medium">WSDL parsed successfully!</span>
+			<p class="text-sm">View the parsed content in the tabs below.</p>
+		</Alert>
+	{/if}
 
 	<div class="space-y-6">
 		<!-- File Upload Section -->
@@ -46,8 +117,9 @@
 			<Fileupload
 				id="file"
 				bind:files={wsdlFile}
-				on:change={handleFileUpload}
+				onchange={handleFileUpload}
 				accept=".wsdl,.xml"
+				disabled={$isLoading}
 			/>
 		</div>
 
@@ -60,9 +132,10 @@
 					id="url"
 					bind:value={wsdlUrl}
 					placeholder="https://example.com/service.wsdl"
-					class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500"
+					disabled={$isLoading}
+					class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500"
 				/>
-				<Button on:click={handleLoadFromUrl}>Load</Button>
+				<Button onclick={handleLoadFromUrl} disabled={$isLoading}>Load</Button>
 			</div>
 		</div>
 
@@ -72,10 +145,11 @@
 			<Textarea
 				id="text"
 				bind:value={wsdlText}
-				rows="6"
+				rows={6}
 				placeholder="Paste your WSDL XML content here..."
+				disabled={$isLoading}
 			/>
-			<Button on:click={handleParseText} class="mt-2">Parse</Button>
+			<Button onclick={handleParseText} class="mt-2" disabled={$isLoading}>Parse</Button>
 		</div>
 	</div>
 </Card>

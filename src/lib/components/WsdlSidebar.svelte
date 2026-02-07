@@ -1,12 +1,7 @@
 <script lang="ts">
 	import { Sidebar, SidebarGroup, SidebarItem, SidebarWrapper } from 'flowbite-svelte';
 	import { ChartPieSolid, GridSolid, MailBoxSolid, UserSolid } from 'flowbite-svelte-icons';
-
-	// Placeholder data - will be populated by the parser later
-	let services = ['Service (Not loaded)'];
-	let operations = ['Operation (Not loaded)'];
-	let types = ['Types (Not loaded)'];
-	let messages = ['Messages (Not loaded)'];
+	import { hasDocument, services, operations, types, messages } from '$lib/stores/wsdl-store';
 
 	let activeItem = 'Services';
 </script>
@@ -16,40 +11,40 @@
 		<SidebarGroup>
 			<h3 class="mb-2 text-xs font-semibold uppercase text-gray-400">Navigation</h3>
 			<SidebarItem
-				label="Services"
+				label="Services ({$services.length})"
 				active={activeItem === 'Services'}
-				on:click={() => (activeItem = 'Services')}
+				onclick={() => (activeItem = 'Services')}
 			>
-				<svelte:fragment slot="icon">
+				{#snippet iconSlot()}
 					<ChartPieSolid class="h-5 w-5 text-gray-500 transition duration-75 dark:text-gray-400" />
-				</svelte:fragment>
+				{/snippet}
 			</SidebarItem>
 			<SidebarItem
-				label="Operations"
+				label="Operations ({$operations.length})"
 				active={activeItem === 'Operations'}
-				on:click={() => (activeItem = 'Operations')}
+				onclick={() => (activeItem = 'Operations')}
 			>
-				<svelte:fragment slot="icon">
+				{#snippet iconSlot()}
 					<GridSolid class="h-5 w-5 text-gray-500 transition duration-75 dark:text-gray-400" />
-				</svelte:fragment>
+				{/snippet}
 			</SidebarItem>
 			<SidebarItem
-				label="Types"
+				label="Types ({$types.length})"
 				active={activeItem === 'Types'}
-				on:click={() => (activeItem = 'Types')}
+				onclick={() => (activeItem = 'Types')}
 			>
-				<svelte:fragment slot="icon">
+				{#snippet iconSlot()}
 					<MailBoxSolid class="h-5 w-5 text-gray-500 transition duration-75 dark:text-gray-400" />
-				</svelte:fragment>
+				{/snippet}
 			</SidebarItem>
 			<SidebarItem
-				label="Messages"
+				label="Messages ({$messages.length})"
 				active={activeItem === 'Messages'}
-				on:click={() => (activeItem = 'Messages')}
+				onclick={() => (activeItem = 'Messages')}
 			>
-				<svelte:fragment slot="icon">
+				{#snippet iconSlot()}
 					<UserSolid class="h-5 w-5 text-gray-500 transition duration-75 dark:text-gray-400" />
-				</svelte:fragment>
+				{/snippet}
 			</SidebarItem>
 		</SidebarGroup>
 	</SidebarWrapper>
