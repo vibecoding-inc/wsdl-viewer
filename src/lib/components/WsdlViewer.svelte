@@ -11,6 +11,8 @@
 		targetNamespace,
 		activeTab,
 		navigateTo,
+		messageReverseRefs,
+		typeReverseRefs,
 		restoreNavigationState,
 		updateTabHash,
 		parseHash,
@@ -274,6 +276,7 @@
 				<div class="space-y-4">
 					{#if $hasDocument && $types.length > 0}
 						{#each $types as type}
+							{@const typeRefList = $typeReverseRefs.get(type.name) || []}
 							<Card size="xl" class="p-5">
 								<div id="type-{type.name}">
 								<div class="mb-2 flex items-center gap-2">
@@ -309,6 +312,43 @@
 										{/each}
 									</ul>
 								{/if}
+								{#if typeRefList.length > 0}
+									<div class="mt-3 border-t border-gray-200 pt-3 dark:border-gray-600">
+										<p class="text-xs font-medium text-gray-500 dark:text-gray-400">Referenced by:</p>
+										<div class="mt-1 flex flex-wrap gap-1">
+											{#each typeRefList as ref}
+												{#if ref.kind === 'operation'}
+													<button
+														type="button"
+														class="cursor-pointer rounded border px-2 py-0.5 text-xs font-medium {ref.indirect ? 'border-green-300 text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-950' : 'border-transparent bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-300 dark:hover:bg-green-800'}"
+														onclick={() => goToOperation(ref.name)}
+														title="{ref.detail}{ref.indirect ? ' (indirect)' : ''}"
+													>
+														⚡ {ref.name} ({ref.detail}) →
+													</button>
+												{:else if ref.kind === 'message'}
+													<button
+														type="button"
+														class="cursor-pointer rounded border px-2 py-0.5 text-xs font-medium {ref.indirect ? 'border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-950' : 'border-transparent bg-orange-100 text-orange-800 hover:bg-orange-200 dark:bg-orange-900 dark:text-orange-300 dark:hover:bg-orange-800'}"
+														onclick={() => goToMessage(ref.name)}
+														title="{ref.detail}{ref.indirect ? ' (indirect)' : ''}"
+													>
+														✉ {ref.name} ({ref.detail}) →
+													</button>
+												{:else if ref.kind === 'type'}
+													<button
+														type="button"
+														class="cursor-pointer rounded border px-2 py-0.5 text-xs font-medium {ref.indirect ? 'border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-950' : 'border-transparent bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:hover:bg-blue-800'}"
+														onclick={() => goToType(ref.name)}
+														title="{ref.detail}{ref.indirect ? ' (indirect)' : ''}"
+													>
+														🔷 {ref.name} ({ref.detail}) →
+													</button>
+												{/if}
+											{/each}
+										</div>
+									</div>
+								{/if}
 								</div>
 							</Card>
 						{/each}
@@ -328,6 +368,7 @@
 				<div class="space-y-4">
 					{#if $hasDocument && $messages.length > 0}
 						{#each $messages as message}
+							{@const msgRefList = $messageReverseRefs.get(message.name) || []}
 							<Card size="xl" class="p-5">
 								<div id="message-{message.name}">
 								<h6 class="mb-2 text-lg font-bold text-gray-900 dark:text-white">{message.name}</h6>
@@ -364,6 +405,23 @@
 									</ul>
 								{:else}
 									<p class="text-sm text-gray-500">No parts defined</p>
+								{/if}
+								{#if msgRefList.length > 0}
+									<div class="mt-3 border-t border-gray-200 pt-3 dark:border-gray-600">
+										<p class="text-xs font-medium text-gray-500 dark:text-gray-400">Referenced by:</p>
+										<div class="mt-1 flex flex-wrap gap-1">
+											{#each msgRefList as ref}
+												<button
+													type="button"
+													class="cursor-pointer rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-300 dark:hover:bg-green-800"
+													onclick={() => goToOperation(ref.operationName)}
+													title="{ref.role}"
+												>
+													⚡ {ref.operationName} ({ref.role}) →
+												</button>
+											{/each}
+										</div>
+									</div>
 								{/if}
 								</div>
 							</Card>

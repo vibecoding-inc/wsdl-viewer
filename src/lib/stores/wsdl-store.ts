@@ -378,6 +378,124 @@ export const rawXml: Readable<string> = derived(
 	$store => $store.rawXml
 );
 
+// ============= Reverse Reference Types =============
+
+export interface MessageReverseRef {
+	operationName: string;
+	role: 'input' | 'output' | 'fault';
+}
+
+export interface TypeReverseRef {
+	kind: 'message' | 'operation' | 'type';
+	name: string;
+	detail?: string; // e.g. "input", "output", "field: fieldName"
+	indirect?: boolean; // true for transitive references (e.g. operation → message → type)
+}
+
+// ============= Reverse Reference Stores =============
+
+/**
+ * Derived store mapping message names to the operations that reference them
+ */
+export const messageReverseRefs: Readable<Map<string, MessageReverseRef[]>> = derived(
+	operations,
+	$ops => {
+		const refs = new Map<string, MessageReverseRef[]>();
+		for (const op of $ops) {
+			if (op.input?.message) {
+				const list = refs.get(op.input.message) || [];
+				list.push({ operationName: op.operationName, role: 'input' });
+				refs.set(op.input.message, list);
+			}
+			if (op.output?.message) {
+				const list = refs.get(op.output.message) || [];
+				list.push({ operationName: op.operationName, role: 'output' });
+				refs.set(op.output.message, list);
+			}
+		}
+		return refs;
+	}
+);
+
+/**
+ * Derived store mapping type names to messages and operations that reference them
+ */
+export const typeReverseRefs: Readable<Map<string, TypeReverseRef[]>> = derived(
+	[wsdlStore, operations],
+	([$store, $ops]) => {
+		const refs = new Map<string, TypeReverseRef[]>();
+		if (!$store.document) return refs;
+
+		const seen = new Set<string>();
+		const addRef = (typeName: string, ref: TypeReverseRef) => {
+			const key = `${typeName}:${ref.kind}:${ref.name}:${ref.detail}`;
+			if (seen.has(key)) return;
+			seen.add(key);
+			const list = refs.get(typeName) || [];
+			list.push(ref);
+			refs.set(typeName, list);
+		};
+
+		// Messages referencing types (via parts)
+		for (const msg of $store.document.messages) {
+			for (const part of msg.parts) {
+				if (part.element) {
+					addRef(part.element, { kind: 'message', name: msg.name, detail: `part: ${part.name}` });
+				}
+				if (part.type) {
+					addRef(part.type, { kind: 'message', name: msg.name, detail: `part: ${part.name}` });
+				}
+			}
+		}
+
+		// Operations referencing types (transitively via their messages)
+		for (const op of $ops) {
+			if (op.input?.message) {
+				const msg = $store.document.messages.find(m => m.name === op.input!.message);
+				if (msg) {
+					for (const part of msg.parts) {
+						const typeName = part.element || part.type;
+						if (typeName) {
+							addRef(typeName, { kind: 'operation', name: op.operationName, detail: 'input', indirect: true });
+						}
+					}
+				}
+			}
+			if (op.output?.message) {
+				const msg = $store.document.messages.find(m => m.name === op.output!.message);
+				if (msg) {
+					for (const part of msg.parts) {
+						const typeName = part.element || part.type;
+						if (typeName) {
+							addRef(typeName, { kind: 'operation', name: op.operationName, detail: 'output', indirect: true });
+						}
+					}
+				}
+			}
+		}
+
+		// Types referencing other types (via fields and base types)
+		for (const type of $store.document.types) {
+			if (type.base) {
+				addRef(type.base, { kind: 'type', name: type.name, detail: 'extends' });
+			}
+			for (const field of type.fields) {
+				const fieldType = field.type;
+				if (fieldType && fieldType !== 'any') {
+					addRef(fieldType, { kind: 'type', name: type.name, detail: `field: ${field.name}` });
+				}
+			}
+		}
+
+		// Sort: direct references first, indirect references after
+		for (const [typeName, list] of refs) {
+			list.sort((a, b) => (a.indirect ? 1 : 0) - (b.indirect ? 1 : 0));
+		}
+
+		return refs;
+	}
+);
+
 // ============= Helper Functions =============
 
 /**
