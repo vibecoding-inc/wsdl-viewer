@@ -27,7 +27,7 @@
 
 <div class="space-y-4">
 	{#if $hasDocument && $types.length > 0}
-		{#each $types as type (type.name)}
+		{#each $types as type (type.name + '-' + type.kind)}
 			{@const typeRefList = $typeReverseRefs.get(type.name) || []}
 			<Card size="xl" class="p-5">
 				<div id="type-{type.name}">
