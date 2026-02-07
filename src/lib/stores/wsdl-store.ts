@@ -1,7 +1,7 @@
 /**
  * WSDL Store - Global state management for parsed WSDL documents
  */
-import { writable, derived, type Readable } from 'svelte/store';
+import { writable, derived, get, type Readable } from 'svelte/store';
 import type {
 	WsdlDocument,
 	WsdlService,
@@ -285,20 +285,14 @@ export const rawXml: Readable<string> = derived(
  * Get message by name from current document
  */
 export function getMessageByName(messageName: string): WsdlMessage | undefined {
-	let result: WsdlMessage | undefined;
-	wsdlStore.subscribe(state => {
-		result = state.document?.messages.find(m => m.name === messageName);
-	})();
-	return result;
+	const state = get(wsdlStore);
+	return state.document?.messages.find(m => m.name === messageName);
 }
 
 /**
  * Get type by name from current document
  */
 export function getTypeByName(typeName: string): WsdlType | undefined {
-	let result: WsdlType | undefined;
-	wsdlStore.subscribe(state => {
-		result = state.document?.types.find(t => t.name === typeName);
-	})();
-	return result;
+	const state = get(wsdlStore);
+	return state.document?.types.find(t => t.name === typeName);
 }

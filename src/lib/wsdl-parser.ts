@@ -1,6 +1,6 @@
 /**
  * WSDL Parser - A comprehensive parser for Web Services Description Language (WSDL) documents
- * Supports WSDL 1.1 and 2.0 specifications
+ * Full support for WSDL 1.1 with basic WSDL 2.0 element recognition
  */
 
 // ============= Type Definitions =============

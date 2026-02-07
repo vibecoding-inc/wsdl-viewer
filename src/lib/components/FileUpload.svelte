@@ -3,7 +3,7 @@
 	import { ExclamationCircleSolid, CheckCircleSolid } from 'flowbite-svelte-icons';
 	import { wsdlStore, isLoading, errors as storeErrors } from '$lib/stores/wsdl-store';
 
-	let wsdlFile: FileList;
+	let wsdlFile: FileList | undefined;
 	let wsdlUrl = '';
 	let wsdlText = '';
 	let parseSuccess = false;
@@ -69,7 +69,7 @@
 	}
 	
 	function handleClear() {
-		wsdlFile = undefined as unknown as FileList;
+		wsdlFile = undefined;
 		wsdlUrl = '';
 		wsdlText = '';
 		parseSuccess = false;
