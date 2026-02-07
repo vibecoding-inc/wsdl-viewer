@@ -9,9 +9,17 @@
 		if (wsdlFile && wsdlFile[0]) {
 			const reader = new FileReader();
 			reader.onload = (e) => {
-				wsdlText = e.target?.result as string;
-				// TODO: Parse WSDL content (implementation for later)
-				console.log('WSDL file loaded:', wsdlText.substring(0, 100));
+				const result = e.target?.result;
+				if (typeof result === 'string') {
+					wsdlText = result;
+					// TODO: Parse WSDL content (implementation for later)
+					console.log('WSDL file loaded:', wsdlText.substring(0, 100));
+				} else {
+					console.error('Failed to read file as text');
+				}
+			};
+			reader.onerror = () => {
+				console.error('Error reading file');
 			};
 			reader.readAsText(wsdlFile[0]);
 		}
