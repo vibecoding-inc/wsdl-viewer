@@ -234,24 +234,93 @@ export const wsdlStore = createWsdlStore();
  */
 export const activeTab: Writable<number> = writable(0);
 
+/** Number of tabs in the viewer (Services, Operations, Types, Messages) */
+const TAB_COUNT = 4;
+
 /**
- * Navigate to a specific tab and scroll to an element
+ * Scroll to an element with visual highlight
+ */
+export function scrollToElement(elementId: string, smooth = true) {
+	requestAnimationFrame(() => {
+		setTimeout(() => {
+			const el = document.getElementById(elementId);
+			if (el) {
+				el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+				el.classList.add('ring-2', 'ring-blue-400');
+				setTimeout(() => el.classList.remove('ring-2', 'ring-blue-400'), 2000);
+			}
+		}, 50);
+	});
+}
+
+/**
+ * Build a URL hash string from tab index and optional element ID
+ */
+function buildHash(tabIndex: number, elementId?: string): string {
+	if (elementId) {
+		return `#tab=${tabIndex}&id=${encodeURIComponent(elementId)}`;
+	}
+	return `#tab=${tabIndex}`;
+}
+
+/**
+ * Parse a URL hash string into tab index and optional element ID
+ */
+export function parseHash(hash: string): { tabIndex: number; elementId?: string } | null {
+	if (!hash || !hash.startsWith('#')) return null;
+	const params = new URLSearchParams(hash.slice(1));
+	const tabStr = params.get('tab');
+	if (tabStr === null) return null;
+	const tabIndex = parseInt(tabStr, 10);
+	if (isNaN(tabIndex) || tabIndex < 0 || tabIndex >= TAB_COUNT) return null;
+	const elementId = params.get('id') ? decodeURIComponent(params.get('id')!) : undefined;
+	return { tabIndex, elementId };
+}
+
+/**
+ * Navigate to a specific tab and scroll to an element.
+ * Pushes a history entry so the browser back button returns to the previous view.
  */
 export function navigateTo(tabIndex: number, elementId?: string) {
+	const hash = buildHash(tabIndex, elementId);
+	history.pushState({ tabIndex, elementId }, '', hash);
 	activeTab.set(tabIndex);
 	if (elementId) {
-		// Wait for tab content to render before scrolling
-		requestAnimationFrame(() => {
-			setTimeout(() => {
-				const el = document.getElementById(elementId);
-				if (el) {
-					el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-					el.classList.add('ring-2', 'ring-blue-400');
-					setTimeout(() => el.classList.remove('ring-2', 'ring-blue-400'), 2000);
-				}
-			}, 50);
-		});
+		scrollToElement(elementId);
 	}
+}
+
+/**
+ * Restore navigation state from a popstate event (browser back/forward).
+ */
+export function restoreNavigationState(state: { tabIndex: number; elementId?: string } | null) {
+	if (state && typeof state.tabIndex === 'number') {
+		activeTab.set(state.tabIndex);
+		if (state.elementId) {
+			scrollToElement(state.elementId, false);
+		}
+	} else {
+		// Try to parse from URL hash as fallback
+		const parsed = parseHash(window.location.hash);
+		if (parsed) {
+			activeTab.set(parsed.tabIndex);
+			if (parsed.elementId) {
+				scrollToElement(parsed.elementId, false);
+			}
+		} else {
+			// No state and no hash means we're back at the initial page
+			activeTab.set(0);
+		}
+	}
+}
+
+/**
+ * Update the URL hash for a tab switch without pushing a new history entry.
+ * Uses replaceState so direct tab clicks don't clutter history.
+ */
+export function updateTabHash(tabIndex: number) {
+	const hash = buildHash(tabIndex);
+	history.replaceState({ tabIndex }, '', hash);
 }
 
 // ============= Derived Stores =============
@@ -359,6 +428,124 @@ export const targetNamespace: Readable<string> = derived(
 export const rawXml: Readable<string> = derived(
 	wsdlStore,
 	$store => $store.rawXml
+);
+
+// ============= Reverse Reference Types =============
+
+export interface MessageReverseRef {
+	operationName: string;
+	role: 'input' | 'output' | 'fault';
+}
+
+export interface TypeReverseRef {
+	kind: 'message' | 'operation' | 'type';
+	name: string;
+	detail?: string; // e.g. "input", "output", "field: fieldName"
+	indirect?: boolean; // true for transitive references (e.g. operation → message → type)
+}
+
+// ============= Reverse Reference Stores =============
+
+/**
+ * Derived store mapping message names to the operations that reference them
+ */
+export const messageReverseRefs: Readable<Map<string, MessageReverseRef[]>> = derived(
+	operations,
+	$ops => {
+		const refs = new Map<string, MessageReverseRef[]>();
+		for (const op of $ops) {
+			if (op.input?.message) {
+				const list = refs.get(op.input.message) || [];
+				list.push({ operationName: op.operationName, role: 'input' });
+				refs.set(op.input.message, list);
+			}
+			if (op.output?.message) {
+				const list = refs.get(op.output.message) || [];
+				list.push({ operationName: op.operationName, role: 'output' });
+				refs.set(op.output.message, list);
+			}
+		}
+		return refs;
+	}
+);
+
+/**
+ * Derived store mapping type names to messages and operations that reference them
+ */
+export const typeReverseRefs: Readable<Map<string, TypeReverseRef[]>> = derived(
+	[wsdlStore, operations],
+	([$store, $ops]) => {
+		const refs = new Map<string, TypeReverseRef[]>();
+		if (!$store.document) return refs;
+
+		const seen = new Set<string>();
+		const addRef = (typeName: string, ref: TypeReverseRef) => {
+			const key = `${typeName}:${ref.kind}:${ref.name}:${ref.detail}`;
+			if (seen.has(key)) return;
+			seen.add(key);
+			const list = refs.get(typeName) || [];
+			list.push(ref);
+			refs.set(typeName, list);
+		};
+
+		// Messages referencing types (via parts)
+		for (const msg of $store.document.messages) {
+			for (const part of msg.parts) {
+				if (part.element) {
+					addRef(part.element, { kind: 'message', name: msg.name, detail: `part: ${part.name}` });
+				}
+				if (part.type) {
+					addRef(part.type, { kind: 'message', name: msg.name, detail: `part: ${part.name}` });
+				}
+			}
+		}
+
+		// Operations referencing types (transitively via their messages)
+		for (const op of $ops) {
+			if (op.input?.message) {
+				const msg = $store.document.messages.find(m => m.name === op.input!.message);
+				if (msg) {
+					for (const part of msg.parts) {
+						const typeName = part.element || part.type;
+						if (typeName) {
+							addRef(typeName, { kind: 'operation', name: op.operationName, detail: 'input', indirect: true });
+						}
+					}
+				}
+			}
+			if (op.output?.message) {
+				const msg = $store.document.messages.find(m => m.name === op.output!.message);
+				if (msg) {
+					for (const part of msg.parts) {
+						const typeName = part.element || part.type;
+						if (typeName) {
+							addRef(typeName, { kind: 'operation', name: op.operationName, detail: 'output', indirect: true });
+						}
+					}
+				}
+			}
+		}
+
+		// Types referencing other types (via fields and base types)
+		for (const type of $store.document.types) {
+			if (type.base) {
+				addRef(type.base, { kind: 'type', name: type.name, detail: 'extends' });
+			}
+			for (const field of type.fields) {
+				const fieldType = field.type;
+				if (fieldType && fieldType !== 'any') {
+					addRef(fieldType, { kind: 'type', name: type.name, detail: `field: ${field.name}` });
+				}
+			}
+		}
+
+		// Sort: direct references first, indirect references after
+		for (const [typeName, list] of refs) {
+			list.sort((a, b) => (a.indirect ? 1 : 0) - (b.indirect ? 1 : 0));
+		}
+
+		return refs;
+	}
 );
 
 // ============= Helper Functions =============

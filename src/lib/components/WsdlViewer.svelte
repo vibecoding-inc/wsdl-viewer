@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Card, Tabs, TabItem, Badge, Alert } from 'flowbite-svelte';
 	import { InfoCircleSolid } from 'flowbite-svelte-icons';
+	import { onMount, onDestroy } from 'svelte';
 	import { 
 		hasDocument, 
 		services, 
@@ -8,9 +9,43 @@
 		types, 
 		messages,
 		activeTab,
-		navigateTo
+		navigateTo,
+		messageReverseRefs,
+		typeReverseRefs,
+		restoreNavigationState,
+		updateTabHash,
+		parseHash,
+		scrollToElement
 	} from '$lib/stores/wsdl-store';
 	import type { WsdlTypeField } from '$lib/wsdl-parser';
+
+	function handlePopState(event: PopStateEvent) {
+		restoreNavigationState(event.state);
+	}
+
+	function switchTab(tabIndex: number) {
+		activeTab.set(tabIndex);
+		updateTabHash(tabIndex);
+	}
+
+	onMount(() => {
+		window.addEventListener('popstate', handlePopState);
+
+		// Restore state from URL hash on initial load
+		const parsed = parseHash(window.location.hash);
+		if (parsed) {
+			activeTab.set(parsed.tabIndex);
+			if (parsed.elementId) {
+				scrollToElement(parsed.elementId, false);
+			}
+		}
+	});
+
+	onDestroy(() => {
+		if (typeof window !== 'undefined') {
+			window.removeEventListener('popstate', handlePopState);
+		}
+	});
 
 	// Helper to format field name with modifiers (without type)
 	function formatFieldPrefix(field: WsdlTypeField): string {
@@ -94,14 +129,14 @@
 		</Alert>
 	{/if}
 
-	<Card size="xl" class="w-full">
+	<Card size="xl" class="w-full p-6">
 		<Tabs>
-			<TabItem open={$activeTab === 0} onclick={() => activeTab.set(0)} title="Services ({$services.length})">
+			<TabItem open={$activeTab === 0} onclick={() => switchTab(0)} title="Services ({$services.length})">
 				<div class="space-y-4">
 					{#if $hasDocument && $services.length > 0}
 						{#each $services as service}
 							{@const serviceOps = getServiceOperations(service.name)}
-							<Card size="xl">
+							<Card size="xl" class="p-5">
 								<div id="service-{service.name}">
 								<h6 class="mb-2 text-xl font-bold text-gray-900 dark:text-white">
 									{service.name}
@@ -164,11 +199,11 @@
 				</div>
 			</TabItem>
 
-			<TabItem open={$activeTab === 1} onclick={() => activeTab.set(1)} title="Operations ({$operations.length})">
+			<TabItem open={$activeTab === 1} onclick={() => switchTab(1)} title="Operations ({$operations.length})">
 				<div class="space-y-4">
 					{#if $hasDocument && $operations.length > 0}
 						{#each $operations as operation}
-							<Card size="xl">
+							<Card size="xl" class="p-5">
 								<div id="operation-{operation.operationName}">
 								<div class="flex items-center gap-2">
 									<h6 class="text-lg font-bold text-gray-900 dark:text-white">{operation.operationName}</h6>
@@ -225,11 +260,12 @@
 				</div>
 			</TabItem>
 
-			<TabItem open={$activeTab === 2} onclick={() => activeTab.set(2)} title="Types ({$types.length})">
+			<TabItem open={$activeTab === 2} onclick={() => switchTab(2)} title="Types ({$types.length})">
 				<div class="space-y-4">
 					{#if $hasDocument && $types.length > 0}
 						{#each $types as type}
-							<Card size="xl">
+							{@const typeRefList = $typeReverseRefs.get(type.name) || []}
+							<Card size="xl" class="p-5">
 								<div id="type-{type.name}">
 								<div class="mb-2 flex items-center gap-2">
 									<h6 class="text-lg font-bold text-gray-900 dark:text-white">{type.name}</h6>
@@ -264,6 +300,43 @@
 										{/each}
 									</ul>
 								{/if}
+								{#if typeRefList.length > 0}
+									<div class="mt-3 border-t border-gray-200 pt-3 dark:border-gray-600">
+										<p class="text-xs font-medium text-gray-500 dark:text-gray-400">Referenced by:</p>
+										<div class="mt-1 flex flex-wrap gap-1">
+											{#each typeRefList as ref}
+												{#if ref.kind === 'operation'}
+													<button
+														type="button"
+														class="cursor-pointer rounded border px-2 py-0.5 text-xs font-medium {ref.indirect ? 'border-green-300 text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-950' : 'border-transparent bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-300 dark:hover:bg-green-800'}"
+														onclick={() => goToOperation(ref.name)}
+														title="{ref.detail}{ref.indirect ? ' (indirect)' : ''}"
+													>
+														⚡ {ref.name} ({ref.detail}) →
+													</button>
+												{:else if ref.kind === 'message'}
+													<button
+														type="button"
+														class="cursor-pointer rounded border px-2 py-0.5 text-xs font-medium {ref.indirect ? 'border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-950' : 'border-transparent bg-orange-100 text-orange-800 hover:bg-orange-200 dark:bg-orange-900 dark:text-orange-300 dark:hover:bg-orange-800'}"
+														onclick={() => goToMessage(ref.name)}
+														title="{ref.detail}{ref.indirect ? ' (indirect)' : ''}"
+													>
+														✉ {ref.name} ({ref.detail}) →
+													</button>
+												{:else if ref.kind === 'type'}
+													<button
+														type="button"
+														class="cursor-pointer rounded border px-2 py-0.5 text-xs font-medium {ref.indirect ? 'border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-950' : 'border-transparent bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:hover:bg-blue-800'}"
+														onclick={() => goToType(ref.name)}
+														title="{ref.detail}{ref.indirect ? ' (indirect)' : ''}"
+													>
+														🔷 {ref.name} ({ref.detail}) →
+													</button>
+												{/if}
+											{/each}
+										</div>
+									</div>
+								{/if}
 								</div>
 							</Card>
 						{/each}
@@ -279,11 +352,12 @@
 				</div>
 			</TabItem>
 
-			<TabItem open={$activeTab === 3} onclick={() => activeTab.set(3)} title="Messages ({$messages.length})">
+			<TabItem open={$activeTab === 3} onclick={() => switchTab(3)} title="Messages ({$messages.length})">
 				<div class="space-y-4">
 					{#if $hasDocument && $messages.length > 0}
 						{#each $messages as message}
-							<Card size="xl">
+							{@const msgRefList = $messageReverseRefs.get(message.name) || []}
+							<Card size="xl" class="p-5">
 								<div id="message-{message.name}">
 								<h6 class="mb-2 text-lg font-bold text-gray-900 dark:text-white">{message.name}</h6>
 								{#if message.documentation}
@@ -319,6 +393,23 @@
 									</ul>
 								{:else}
 									<p class="text-sm text-gray-500">No parts defined</p>
+								{/if}
+								{#if msgRefList.length > 0}
+									<div class="mt-3 border-t border-gray-200 pt-3 dark:border-gray-600">
+										<p class="text-xs font-medium text-gray-500 dark:text-gray-400">Referenced by:</p>
+										<div class="mt-1 flex flex-wrap gap-1">
+											{#each msgRefList as ref}
+												<button
+													type="button"
+													class="cursor-pointer rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-300 dark:hover:bg-green-800"
+													onclick={() => goToOperation(ref.operationName)}
+													title="{ref.role}"
+												>
+													⚡ {ref.operationName} ({ref.role}) →
+												</button>
+											{/each}
+										</div>
+									</div>
 								{/if}
 								</div>
 							</Card>
