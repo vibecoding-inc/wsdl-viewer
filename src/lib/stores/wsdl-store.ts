@@ -188,17 +188,16 @@ export const activeTab: Writable<number> = writable(0);
 export function navigateTo(tabIndex: number, elementId?: string) {
 	activeTab.set(tabIndex);
 	if (elementId) {
-		// Use requestAnimationFrame to wait for tab content to render
+		// Wait for tab content to render before scrolling
 		requestAnimationFrame(() => {
-			requestAnimationFrame(() => {
+			setTimeout(() => {
 				const el = document.getElementById(elementId);
 				if (el) {
 					el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-					// Brief highlight effect
 					el.classList.add('ring-2', 'ring-blue-400');
 					setTimeout(() => el.classList.remove('ring-2', 'ring-blue-400'), 2000);
 				}
-			});
+			}, 50);
 		});
 	}
 }

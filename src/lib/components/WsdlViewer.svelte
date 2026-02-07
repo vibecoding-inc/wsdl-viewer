@@ -204,7 +204,7 @@
 											<div class="rounded border border-gray-200 p-2 dark:border-gray-600">
 												<span class="text-xs font-medium text-gray-500 dark:text-gray-400">Input:</span>
 												{#if isKnownMessage(operation.input.message)}
-													<button type="button" class="ml-1 cursor-pointer text-xs text-blue-600 hover:underline dark:text-blue-400" onclick={() => goToMessage(operation.input?.message || '')}>{operation.input.message} →</button>
+													<button type="button" class="ml-1 cursor-pointer text-xs text-blue-600 hover:underline dark:text-blue-400" onclick={() => goToMessage(operation.input.message)}>{operation.input.message} →</button>
 												{:else}
 													<code class="ml-1 text-xs">{operation.input.message}</code>
 												{/if}
@@ -214,7 +214,7 @@
 											<div class="rounded border border-gray-200 p-2 dark:border-gray-600">
 												<span class="text-xs font-medium text-gray-500 dark:text-gray-400">Output:</span>
 												{#if isKnownMessage(operation.output.message)}
-													<button type="button" class="ml-1 cursor-pointer text-xs text-blue-600 hover:underline dark:text-blue-400" onclick={() => goToMessage(operation.output?.message || '')}>{operation.output.message} →</button>
+													<button type="button" class="ml-1 cursor-pointer text-xs text-blue-600 hover:underline dark:text-blue-400" onclick={() => goToMessage(operation.output.message)}>{operation.output.message} →</button>
 												{:else}
 													<code class="ml-1 text-xs">{operation.output.message}</code>
 												{/if}
@@ -254,7 +254,7 @@
 								{/if}
 								{#if type.base}
 									<p class="mb-2 text-sm text-gray-600 dark:text-gray-400">
-										Extends: {#if isKnownType(stripPrefix(type.base))}<button type="button" class="cursor-pointer text-blue-600 hover:underline dark:text-blue-400" onclick={() => goToType(stripPrefix(type.base || ''))}><code class="text-xs">{type.base}</code> →</button>{:else}<code class="text-xs">{type.base}</code>{/if}
+										Extends: {#if isKnownType(stripPrefix(type.base))}<button type="button" class="cursor-pointer text-blue-600 hover:underline dark:text-blue-400" onclick={() => goToType(stripPrefix(type.base))}><code class="text-xs">{type.base}</code> →</button>{:else}<code class="text-xs">{type.base}</code>{/if}
 									</p>
 								{/if}
 								{#if type.restrictions?.enumeration}
@@ -312,14 +312,14 @@
 												</code>
 												{#if part.element}
 													{#if isKnownType(stripPrefix(part.element))}
-														<button type="button" class="cursor-pointer text-xs text-blue-600 hover:underline dark:text-blue-400" onclick={() => goToType(stripPrefix(part.element || ''))}>{part.element} →</button>
+														<button type="button" class="cursor-pointer text-xs text-blue-600 hover:underline dark:text-blue-400" onclick={() => goToType(stripPrefix(part.element))}>{part.element} →</button>
 													{:else}
 														<code class="text-xs">{part.element}</code>
 													{/if}
 													<Badge color="purple" class="ml-1">element</Badge>
 												{:else if part.type}
 													{#if isKnownType(stripPrefix(part.type))}
-														<button type="button" class="cursor-pointer text-xs text-blue-600 hover:underline dark:text-blue-400" onclick={() => goToType(stripPrefix(part.type || ''))}>{part.type} →</button>
+														<button type="button" class="cursor-pointer text-xs text-blue-600 hover:underline dark:text-blue-400" onclick={() => goToType(stripPrefix(part.type))}>{part.type} →</button>
 													{:else}
 														<code class="text-xs">{part.type}</code>
 													{/if}
