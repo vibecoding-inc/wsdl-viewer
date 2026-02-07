@@ -57,7 +57,7 @@
 				<p class="text-xs text-gray-400 dark:text-gray-500">No types</p>
 			{:else}
 				<ul class="space-y-0.5">
-					{#each $types as type, i (type.name + '-' + type.kind)}
+					{#each $types as type (type.name + '-' + type.kind)}
 						<li>
 							<button
 								type="button"
