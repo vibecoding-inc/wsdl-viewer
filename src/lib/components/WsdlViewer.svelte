@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { Card, Tabs, TabItem, Alert } from 'flowbite-svelte';
-	import { InfoCircleSolid } from 'flowbite-svelte-icons';
+	import { Card, Tabs, TabItem } from 'flowbite-svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import {
 		hasDocument,
@@ -8,7 +7,6 @@
 		operations,
 		types,
 		messages,
-		targetNamespace,
 		activeTab,
 		restoreNavigationState,
 		updateTabHash,
@@ -50,29 +48,13 @@
 
 <div class="w-full">
 	{#if !$hasDocument}
-		<Alert color="blue" class="mb-4">
-			{#snippet icon()}
-				<InfoCircleSolid class="h-5 w-5" />
-			{/snippet}
-			<span class="font-medium">No WSDL loaded</span>
-			Please upload a WSDL file or paste WSDL content to view details.
-		</Alert>
+		<div class="flex h-full items-center justify-center py-20 text-gray-400 dark:text-gray-500">
+			<p class="text-lg">Load a WSDL document to begin analysis.</p>
+		</div>
 	{/if}
 
+	{#if $hasDocument}
 	<Card size="xl" class="w-full p-6">
-		<div class="mb-4 flex items-center justify-between">
-			<h5 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-				WSDL Document Viewer
-			</h5>
-			{#if $hasDocument && $targetNamespace}
-				<code
-					class="rounded bg-gray-100 px-2 py-1 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300"
-				>
-					{$targetNamespace}
-				</code>
-			{/if}
-		</div>
-
 		<Tabs>
 			<TabItem
 				open={$activeTab === 0}
@@ -107,4 +89,5 @@
 			</TabItem>
 		</Tabs>
 	</Card>
+	{/if}
 </div>
