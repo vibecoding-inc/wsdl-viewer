@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { Button } from 'flowbite-svelte';
 	import { FolderOpenOutline, TrashBinOutline } from 'flowbite-svelte-icons';
 	import FileUpload from '$lib/components/FileUpload.svelte';
@@ -13,7 +13,11 @@
 		services,
 		operations,
 		types,
-		messages
+		messages,
+		updateTabHash,
+		restoreNavigationState,
+		parseHash,
+		scrollToElement
 	} from '$lib/stores/wsdl-store';
 
 	let showModal = $state(false);
@@ -35,10 +39,30 @@
 		}
 	}
 
+	function handlePopState(event: PopStateEvent) {
+		restoreNavigationState(event.state);
+	}
+
 	onMount(() => {
 		const restored = wsdlStore.restoreFromLocalStorage();
 		if (!restored) {
 			showModal = true;
+		}
+
+		window.addEventListener('popstate', handlePopState);
+
+		const parsed = parseHash(window.location.hash);
+		if (parsed) {
+			activeTab.set(parsed.tabIndex);
+			if (parsed.elementId) {
+				scrollToElement(parsed.elementId, false);
+			}
+		}
+	});
+
+	onDestroy(() => {
+		if (typeof window !== 'undefined') {
+			window.removeEventListener('popstate', handlePopState);
 		}
 	});
 
@@ -53,6 +77,7 @@
 
 	function switchTab(index: number) {
 		activeTab.set(index);
+		updateTabHash(index);
 	}
 </script>
 
