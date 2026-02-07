@@ -103,7 +103,11 @@ Once loaded, you can navigate through the WSDL structure using the tabs:
 ## Development Roadmap
 
 - [x] Basic UI implementation
-- [ ] WSDL parser implementation
+- [x] WSDL parser implementation
+  - [x] Full WSDL 1.1 support (services, port types, bindings, messages, types)
+  - [x] Support for complex types, simple types, and elements
+  - [x] Enumeration and restriction parsing
+  - [x] SOAP action and binding information extraction
 - [ ] Real-time WSDL validation
 - [ ] Export functionality
 - [ ] Search and filter capabilities
