@@ -78,7 +78,7 @@
 	}
 </script>
 
-<Card class="max-w-full">
+<Card size="xl" class="w-full">
 	<div class="mb-4 flex items-center justify-between">
 		<h5 class="text-xl font-bold text-gray-900 dark:text-white">Load WSDL Document</h5>
 		{#if parseSuccess}
@@ -120,6 +120,7 @@
 				onchange={handleFileUpload}
 				accept=".wsdl,.xml"
 				disabled={$isLoading}
+				class="p-1!"
 			/>
 		</div>
 
@@ -148,6 +149,7 @@
 				rows={6}
 				placeholder="Paste your WSDL XML content here..."
 				disabled={$isLoading}
+				class="w-full"
 			/>
 			<Button onclick={handleParseText} class="mt-2" disabled={$isLoading}>Parse</Button>
 		</div>

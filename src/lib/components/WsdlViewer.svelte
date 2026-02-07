@@ -46,7 +46,7 @@
 		</Alert>
 	{/if}
 
-	<Card class="max-w-full">
+	<Card size="xl" class="w-full">
 		<div class="mb-4 flex items-center justify-between">
 			<h5 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
 				WSDL Document Viewer
@@ -63,7 +63,7 @@
 				<div class="space-y-4">
 					{#if $hasDocument && $services.length > 0}
 						{#each $services as service}
-							<Card>
+							<Card size="xl">
 								<h6 class="mb-2 text-xl font-bold text-gray-900 dark:text-white">
 									{service.name}
 								</h6>
@@ -111,7 +111,7 @@
 				<div class="space-y-4">
 					{#if $hasDocument && $operations.length > 0}
 						{#each $operations as operation}
-							<Card>
+							<Card size="xl">
 								<div class="flex items-center gap-2">
 									<h6 class="text-lg font-bold text-gray-900 dark:text-white">{operation.operationName}</h6>
 									<Badge color="green">SOAP</Badge>
@@ -146,7 +146,7 @@
 				<div class="space-y-4">
 					{#if $hasDocument && $types.length > 0}
 						{#each $types as type}
-							<Card>
+							<Card size="xl">
 								<div class="mb-2 flex items-center gap-2">
 									<h6 class="text-lg font-bold text-gray-900 dark:text-white">{type.name}</h6>
 									<Badge color={getTypeKindColor(type.kind)}>{type.kind}</Badge>
@@ -196,7 +196,7 @@
 				<div class="space-y-4">
 					{#if $hasDocument && $messages.length > 0}
 						{#each $messages as message}
-							<Card>
+							<Card size="xl">
 								<h6 class="mb-2 text-lg font-bold text-gray-900 dark:text-white">{message.name}</h6>
 								{#if message.documentation}
 									<p class="mb-2 text-sm italic text-gray-600 dark:text-gray-400">
