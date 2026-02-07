@@ -196,6 +196,10 @@ function createWsdlStore() {
 			const savedXml = loadFromLocalStorage();
 			if (savedXml) {
 				const result = this.parseXml(savedXml);
+				if (!result.success) {
+					clearLocalStorage();
+					set(initialState);
+				}
 				return result.success;
 			}
 			return false;
