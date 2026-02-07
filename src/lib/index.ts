@@ -33,4 +33,7 @@ export {
 	targetNamespace,
 	rawXml
 } from './stores/wsdl-store';
-export type { WsdlStoreState } from './stores/wsdl-store';
+export type { WsdlStoreState, MessageReverseRef, TypeReverseRef } from './stores/wsdl-store';
+
+// Utility exports
+export { formatFieldPrefix, formatFieldSuffix, getTypeKindColor, stripPrefix } from './utils';
