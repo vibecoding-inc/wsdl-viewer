@@ -13,3 +13,149 @@
   --color-primary-800: #1e40af;
   --color-primary-900: #1e3a8a;
 }
+
+/* ============ Theme custom properties (set by JS) ============ */
+:root {
+  --theme-base: #f9fafb;
+  --theme-surface0: #ffffff;
+  --theme-surface1: #e5e7eb;
+  --theme-surface2: #d1d5db;
+  --theme-subtext: #6b7280;
+  --theme-text: #111827;
+  --theme-accent: #3b82f6;
+  --theme-accent-light: #60a5fa;
+  --theme-link: #2563eb;
+  --theme-green: #16a34a;
+  --theme-yellow: #ca8a04;
+  --theme-red: #dc2626;
+  --theme-purple: #9333ea;
+}
+
+/* ============ Theme overrides ============ */
+body {
+  background-color: var(--theme-base);
+  color: var(--theme-text);
+}
+
+/* Cards & surfaces */
+div[class*="bg-white"],
+.bg-white {
+  background-color: var(--theme-surface0) !important;
+}
+.dark .dark\:bg-gray-800,
+.dark .dark\:bg-gray-700 {
+  background-color: var(--theme-surface0) !important;
+}
+
+/* Text colors */
+.text-gray-900,
+h5, h6 {
+  color: var(--theme-text) !important;
+}
+.dark .dark\:text-white {
+  color: var(--theme-text) !important;
+}
+.text-gray-700,
+.text-gray-600 {
+  color: var(--theme-subtext) !important;
+}
+.dark .dark\:text-gray-400,
+.dark .dark\:text-gray-300 {
+  color: var(--theme-subtext) !important;
+}
+.text-gray-500 {
+  color: var(--theme-subtext) !important;
+}
+
+/* Borders */
+.border-gray-200,
+.border-gray-300 {
+  border-color: var(--theme-surface1) !important;
+}
+.dark .dark\:border-gray-600,
+.dark .dark\:border-gray-700 {
+  border-color: var(--theme-surface1) !important;
+}
+
+/* Form inputs */
+input[type="url"],
+input[type="text"],
+textarea,
+.bg-gray-50 {
+  background-color: var(--theme-base) !important;
+  color: var(--theme-text) !important;
+  border-color: var(--theme-surface1) !important;
+}
+
+/* Links */
+.text-blue-600,
+.dark .dark\:text-blue-400 {
+  color: var(--theme-link) !important;
+}
+
+/* Tabs */
+button[role="tab"] {
+  color: var(--theme-subtext) !important;
+}
+button[role="tab"][aria-selected="true"] {
+  color: var(--theme-accent) !important;
+  border-color: var(--theme-accent) !important;
+}
+
+/* Code elements */
+code {
+  background-color: var(--theme-base) !important;
+  color: var(--theme-subtext) !important;
+}
+
+/* Badges */
+.bg-blue-100, .dark .dark\:bg-blue-900 {
+  background-color: color-mix(in srgb, var(--theme-accent) 20%, transparent) !important;
+  color: var(--theme-accent) !important;
+}
+.bg-green-100, .dark .dark\:bg-green-900,
+.bg-green-100 {
+  background-color: color-mix(in srgb, var(--theme-green) 20%, transparent) !important;
+  color: var(--theme-green) !important;
+}
+.bg-purple-100, .dark .dark\:bg-purple-900 {
+  background-color: color-mix(in srgb, var(--theme-purple) 20%, transparent) !important;
+  color: var(--theme-purple) !important;
+}
+.bg-yellow-100, .dark .dark\:bg-yellow-900 {
+  background-color: color-mix(in srgb, var(--theme-yellow) 20%, transparent) !important;
+  color: var(--theme-yellow) !important;
+}
+
+/* Buttons */
+button.bg-primary-700,
+button[class*="bg-primary"] {
+  background-color: var(--theme-accent) !important;
+  color: var(--theme-text) !important;
+}
+
+/* Alerts */
+.bg-blue-50, .dark .dark\:bg-blue-900 {
+  background-color: color-mix(in srgb, var(--theme-accent) 15%, var(--theme-base)) !important;
+  color: var(--theme-accent) !important;
+}
+.bg-red-50, .dark .dark\:bg-red-900 {
+  background-color: color-mix(in srgb, var(--theme-red) 15%, var(--theme-base)) !important;
+  color: var(--theme-red) !important;
+}
+.bg-green-50, .dark .dark\:bg-green-900 {
+  background-color: color-mix(in srgb, var(--theme-green) 15%, var(--theme-base)) !important;
+  color: var(--theme-green) !important;
+}
+
+/* Placeholder text */
+::placeholder {
+  color: var(--theme-surface2) !important;
+}
+
+/* Select dropdown in theme selector */
+select option,
+select optgroup {
+  background-color: var(--theme-surface0);
+  color: var(--theme-text);
+}

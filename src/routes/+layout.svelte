@@ -2,11 +2,14 @@
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { onMount } from 'svelte';
+	import { initTheme } from '$lib/stores/theme-store';
 
 	let { children } = $props();
 
-	// Initialize Flowbite when component mounts
+	// Initialize theme and Flowbite when component mounts
 	onMount(async () => {
+		initTheme();
+
 		if (typeof window !== 'undefined') {
 			const flowbite = await import('flowbite');
 			flowbite.initFlowbite();
