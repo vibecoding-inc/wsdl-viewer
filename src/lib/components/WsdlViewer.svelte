@@ -1,24 +1,24 @@
 <script lang="ts">
-	import { Card, Tabs, TabItem, Badge, Alert } from 'flowbite-svelte';
+	import { Card, Tabs, TabItem, Alert } from 'flowbite-svelte';
 	import { InfoCircleSolid } from 'flowbite-svelte-icons';
 	import { onMount, onDestroy } from 'svelte';
-	import { 
-		hasDocument, 
-		services, 
-		operations, 
-		types, 
+	import {
+		hasDocument,
+		services,
+		operations,
+		types,
 		messages,
 		targetNamespace,
 		activeTab,
-		navigateTo,
-		messageReverseRefs,
-		typeReverseRefs,
 		restoreNavigationState,
 		updateTabHash,
 		parseHash,
 		scrollToElement
 	} from '$lib/stores/wsdl-store';
-	import type { WsdlTypeField } from '$lib/wsdl-parser';
+	import ServicesTab from './tabs/ServicesTab.svelte';
+	import OperationsTab from './tabs/OperationsTab.svelte';
+	import TypesTab from './tabs/TypesTab.svelte';
+	import MessagesTab from './tabs/MessagesTab.svelte';
 
 	function handlePopState(event: PopStateEvent) {
 		restoreNavigationState(event.state);
@@ -32,7 +32,6 @@
 	onMount(() => {
 		window.addEventListener('popstate', handlePopState);
 
-		// Restore state from URL hash on initial load
 		const parsed = parseHash(window.location.hash);
 		if (parsed) {
 			activeTab.set(parsed.tabIndex);
@@ -47,84 +46,14 @@
 			window.removeEventListener('popstate', handlePopState);
 		}
 	});
-
-	// Helper to format field name with modifiers (without type)
-	function formatFieldPrefix(field: WsdlTypeField): string {
-		let result = field.name;
-		if (field.isAttribute) {
-			result = `@${result}`;
-		}
-		return result;
-	}
-
-	// Helper to format field suffix (optional, array)
-	function formatFieldSuffix(field: WsdlTypeField): string {
-		let result = '';
-		if (field.isOptional) {
-			result += ' (optional)';
-		}
-		if (field.maxOccurs === 'unbounded' || Number(field.maxOccurs) > 1) {
-			result += '[]';
-		}
-		return result;
-	}
-	
-	// Helper to get badge color based on type kind
-	function getTypeKindColor(kind: string): 'blue' | 'green' | 'purple' {
-		switch (kind) {
-			case 'complexType': return 'blue';
-			case 'simpleType': return 'green';
-			case 'element': return 'purple';
-			default: return 'blue';
-		}
-	}
-
-	// Check if a type name refers to a known type in the document
-	function isKnownType(typeName: string): boolean {
-		return $types.some(t => t.name === typeName);
-	}
-
-	// Check if a message name refers to a known message
-	function isKnownMessage(messageName: string): boolean {
-		return $messages.some(m => m.name === messageName);
-	}
-
-	// Get operations belonging to a service
-	function getServiceOperations(serviceName: string) {
-		return $operations.filter(op => op.serviceName === serviceName);
-	}
-
-	// Navigate to a type definition
-	function goToType(typeName: string) {
-		navigateTo(2, `type-${typeName}`);
-	}
-
-	// Navigate to a message definition
-	function goToMessage(messageName: string) {
-		navigateTo(3, `message-${messageName}`);
-	}
-
-	// Navigate to an operation
-	function goToOperation(operationName: string) {
-		navigateTo(1, `operation-${operationName}`);
-	}
-
-	// Navigate to a service
-	function goToService(serviceName: string) {
-		navigateTo(0, `service-${serviceName}`);
-	}
-
-	// Strip namespace prefix from a type name
-	function stripPrefix(name: string): string {
-		const idx = name.indexOf(':');
-		return idx >= 0 ? name.substring(idx + 1) : name;
-	}
 </script>
 
 <div class="w-full">
 	{#if !$hasDocument}
 		<Alert color="blue" class="mb-4">
-			<InfoCircleSolid slot="icon" class="h-5 w-5" />
+			{#snippet icon()}
+				<InfoCircleSolid class="h-5 w-5" />
+			{/snippet}
 			<span class="font-medium">No WSDL loaded</span>
 			Please upload a WSDL file or paste WSDL content to view details.
 		</Alert>
@@ -136,306 +65,45 @@
 				WSDL Document Viewer
 			</h5>
 			{#if $hasDocument && $targetNamespace}
-				<code class="rounded bg-gray-100 px-2 py-1 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+				<code
+					class="rounded bg-gray-100 px-2 py-1 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+				>
 					{$targetNamespace}
 				</code>
 			{/if}
 		</div>
 
 		<Tabs>
-			<TabItem open={$activeTab === 0} onclick={() => switchTab(0)} title="Services ({$services.length})">
-				<div class="space-y-4">
-					{#if $hasDocument && $services.length > 0}
-						{#each $services as service}
-							{@const serviceOps = getServiceOperations(service.name)}
-							<Card size="xl" class="p-5">
-								<div id="service-{service.name}">
-								<h6 class="mb-2 text-xl font-bold text-gray-900 dark:text-white">
-									{service.name}
-								</h6>
-								{#if service.documentation}
-									<p class="mb-3 text-sm italic text-gray-600 dark:text-gray-400">
-										{service.documentation}
-									</p>
-								{/if}
-								
-								{#if service.ports.length > 0}
-									<div class="space-y-3">
-										{#each service.ports as port}
-											<div class="rounded-lg border border-gray-200 p-3 dark:border-gray-600">
-												<div class="flex items-center gap-2">
-													<span class="font-medium text-gray-900 dark:text-white">{port.name}</span>
-													<Badge color="blue">{port.protocol}</Badge>
-												</div>
-												{#if port.address}
-													<p class="mt-1 text-sm text-gray-700 dark:text-gray-400">
-														Endpoint: <code class="rounded bg-gray-100 px-1 py-0.5 text-xs dark:bg-gray-700">{port.address}</code>
-													</p>
-												{/if}
-												<p class="mt-1 text-sm text-gray-500 dark:text-gray-500">
-													Binding: <code class="text-xs">{port.binding}</code>
-												</p>
-											</div>
-										{/each}
-									</div>
-								{/if}
-
-								{#if serviceOps.length > 0}
-									<div class="mt-3">
-										<p class="text-sm font-medium text-gray-700 dark:text-gray-300">Operations:</p>
-										<div class="mt-1 flex flex-wrap gap-1">
-											{#each serviceOps as op}
-												<button
-													type="button"
-													class="cursor-pointer rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-300 dark:hover:bg-green-800"
-													onclick={() => goToOperation(op.operationName)}
-												>
-													{op.operationName} →
-												</button>
-											{/each}
-										</div>
-									</div>
-								{/if}
-								</div>
-							</Card>
-						{/each}
-					{:else if $hasDocument}
-						<p class="text-gray-500 dark:text-gray-400">
-							No services defined in this WSDL document.
-						</p>
-					{:else}
-						<p class="text-gray-500 dark:text-gray-400">
-							Service information will appear here once a WSDL is loaded.
-						</p>
-					{/if}
-				</div>
+			<TabItem
+				open={$activeTab === 0}
+				onclick={() => switchTab(0)}
+				title="Services ({$services.length})"
+			>
+				<ServicesTab />
 			</TabItem>
 
-			<TabItem open={$activeTab === 1} onclick={() => switchTab(1)} title="Operations ({$operations.length})">
-				<div class="space-y-4">
-					{#if $hasDocument && $operations.length > 0}
-						{#each $operations as operation}
-							<Card size="xl" class="p-5">
-								<div id="operation-{operation.operationName}">
-								<div class="flex items-center gap-2">
-									<h6 class="text-lg font-bold text-gray-900 dark:text-white">{operation.operationName}</h6>
-									<Badge color="green">SOAP</Badge>
-								</div>
-								{#if operation.documentation}
-									<p class="mt-1 text-sm italic text-gray-600 dark:text-gray-400">
-										{operation.documentation}
-									</p>
-								{/if}
-								<div class="mt-2 space-y-1 text-sm text-gray-700 dark:text-gray-400">
-									<p>Service: <button type="button" class="cursor-pointer text-blue-600 hover:underline dark:text-blue-400" onclick={() => goToService(operation.serviceName)}><code class="text-xs">{operation.serviceName}</code></button></p>
-									<p>Port: <code class="text-xs">{operation.portName}</code></p>
-									{#if operation.soapAction}
-										<p>SOAP Action: <code class="text-xs">{operation.soapAction}</code></p>
-									{/if}
-								</div>
-								{#if operation.input || operation.output}
-									<div class="mt-3 space-y-2">
-										{#if operation.input}
-											<div class="rounded border border-gray-200 p-2 dark:border-gray-600">
-												<span class="text-xs font-medium text-gray-500 dark:text-gray-400">Input:</span>
-												{#if isKnownMessage(operation.input.message)}
-													<button type="button" class="ml-1 cursor-pointer text-xs text-blue-600 hover:underline dark:text-blue-400" onclick={() => goToMessage(operation.input.message)}>{operation.input.message} →</button>
-												{:else}
-													<code class="ml-1 text-xs">{operation.input.message}</code>
-												{/if}
-											</div>
-										{/if}
-										{#if operation.output}
-											<div class="rounded border border-gray-200 p-2 dark:border-gray-600">
-												<span class="text-xs font-medium text-gray-500 dark:text-gray-400">Output:</span>
-												{#if isKnownMessage(operation.output.message)}
-													<button type="button" class="ml-1 cursor-pointer text-xs text-blue-600 hover:underline dark:text-blue-400" onclick={() => goToMessage(operation.output.message)}>{operation.output.message} →</button>
-												{:else}
-													<code class="ml-1 text-xs">{operation.output.message}</code>
-												{/if}
-											</div>
-										{/if}
-									</div>
-								{/if}
-								</div>
-							</Card>
-						{/each}
-					{:else if $hasDocument}
-						<p class="text-gray-500 dark:text-gray-400">
-							No operations defined in this WSDL document.
-						</p>
-					{:else}
-						<p class="text-gray-500 dark:text-gray-400">
-							Operations will appear here once a WSDL is loaded.
-						</p>
-					{/if}
-				</div>
+			<TabItem
+				open={$activeTab === 1}
+				onclick={() => switchTab(1)}
+				title="Operations ({$operations.length})"
+			>
+				<OperationsTab />
 			</TabItem>
 
-			<TabItem open={$activeTab === 2} onclick={() => switchTab(2)} title="Types ({$types.length})">
-				<div class="space-y-4">
-					{#if $hasDocument && $types.length > 0}
-						{#each $types as type}
-							{@const typeRefList = $typeReverseRefs.get(type.name) || []}
-							<Card size="xl" class="p-5">
-								<div id="type-{type.name}">
-								<div class="mb-2 flex items-center gap-2">
-									<h6 class="text-lg font-bold text-gray-900 dark:text-white">{type.name}</h6>
-									<Badge color={getTypeKindColor(type.kind)}>{type.kind}</Badge>
-								</div>
-								{#if type.documentation}
-									<p class="mb-2 text-sm italic text-gray-600 dark:text-gray-400">
-										{type.documentation}
-									</p>
-								{/if}
-								{#if type.base}
-									<p class="mb-2 text-sm text-gray-600 dark:text-gray-400">
-										Extends: {#if isKnownType(stripPrefix(type.base))}<button type="button" class="cursor-pointer text-blue-600 hover:underline dark:text-blue-400" onclick={() => goToType(stripPrefix(type.base))}><code class="text-xs">{type.base}</code> →</button>{:else}<code class="text-xs">{type.base}</code>{/if}
-									</p>
-								{/if}
-								{#if type.restrictions?.enumeration}
-									<div class="mb-2">
-										<p class="text-sm font-medium text-gray-700 dark:text-gray-300">Allowed values:</p>
-										<div class="mt-1 flex flex-wrap gap-1">
-											{#each type.restrictions.enumeration as value}
-												<Badge color="yellow">{value}</Badge>
-											{/each}
-										</div>
-									</div>
-								{/if}
-								{#if type.fields.length > 0}
-									<ul class="list-inside list-disc space-y-1 text-sm text-gray-700 dark:text-gray-400">
-										{#each type.fields as field}
-											<li>
-												<code class="text-xs">{formatFieldPrefix(field)}: </code>{#if isKnownType(stripPrefix(field.type))}<button type="button" class="cursor-pointer text-xs text-blue-600 hover:underline dark:text-blue-400" onclick={() => goToType(stripPrefix(field.type))}>{field.type} →</button>{:else}<code class="text-xs">{field.type}</code>{/if}<code class="text-xs">{formatFieldSuffix(field)}</code>
-											</li>
-										{/each}
-									</ul>
-								{/if}
-								{#if typeRefList.length > 0}
-									<div class="mt-3 border-t border-gray-200 pt-3 dark:border-gray-600">
-										<p class="text-xs font-medium text-gray-500 dark:text-gray-400">Referenced by:</p>
-										<div class="mt-1 flex flex-wrap gap-1">
-											{#each typeRefList as ref}
-												{#if ref.kind === 'operation'}
-													<button
-														type="button"
-														class="cursor-pointer rounded border px-2 py-0.5 text-xs font-medium {ref.indirect ? 'border-green-300 text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-950' : 'border-transparent bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-300 dark:hover:bg-green-800'}"
-														onclick={() => goToOperation(ref.name)}
-														title="{ref.detail}{ref.indirect ? ' (indirect)' : ''}"
-													>
-														⚡ {ref.name} ({ref.detail}) →
-													</button>
-												{:else if ref.kind === 'message'}
-													<button
-														type="button"
-														class="cursor-pointer rounded border px-2 py-0.5 text-xs font-medium {ref.indirect ? 'border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-950' : 'border-transparent bg-orange-100 text-orange-800 hover:bg-orange-200 dark:bg-orange-900 dark:text-orange-300 dark:hover:bg-orange-800'}"
-														onclick={() => goToMessage(ref.name)}
-														title="{ref.detail}{ref.indirect ? ' (indirect)' : ''}"
-													>
-														✉ {ref.name} ({ref.detail}) →
-													</button>
-												{:else if ref.kind === 'type'}
-													<button
-														type="button"
-														class="cursor-pointer rounded border px-2 py-0.5 text-xs font-medium {ref.indirect ? 'border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-950' : 'border-transparent bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:hover:bg-blue-800'}"
-														onclick={() => goToType(ref.name)}
-														title="{ref.detail}{ref.indirect ? ' (indirect)' : ''}"
-													>
-														🔷 {ref.name} ({ref.detail}) →
-													</button>
-												{/if}
-											{/each}
-										</div>
-									</div>
-								{/if}
-								</div>
-							</Card>
-						{/each}
-					{:else if $hasDocument}
-						<p class="text-gray-500 dark:text-gray-400">
-							No types defined in this WSDL document.
-						</p>
-					{:else}
-						<p class="text-gray-500 dark:text-gray-400">
-							Type definitions will appear here once a WSDL is loaded.
-						</p>
-					{/if}
-				</div>
+			<TabItem
+				open={$activeTab === 2}
+				onclick={() => switchTab(2)}
+				title="Types ({$types.length})"
+			>
+				<TypesTab />
 			</TabItem>
 
-			<TabItem open={$activeTab === 3} onclick={() => switchTab(3)} title="Messages ({$messages.length})">
-				<div class="space-y-4">
-					{#if $hasDocument && $messages.length > 0}
-						{#each $messages as message}
-							{@const msgRefList = $messageReverseRefs.get(message.name) || []}
-							<Card size="xl" class="p-5">
-								<div id="message-{message.name}">
-								<h6 class="mb-2 text-lg font-bold text-gray-900 dark:text-white">{message.name}</h6>
-								{#if message.documentation}
-									<p class="mb-2 text-sm italic text-gray-600 dark:text-gray-400">
-										{message.documentation}
-									</p>
-								{/if}
-								{#if message.parts.length > 0}
-									<ul class="list-inside list-disc space-y-1 text-sm text-gray-700 dark:text-gray-400">
-										{#each message.parts as part}
-											<li>
-												<code class="text-xs">
-													{part.name}: 
-												</code>
-												{#if part.element}
-													{#if isKnownType(stripPrefix(part.element))}
-														<button type="button" class="cursor-pointer text-xs text-blue-600 hover:underline dark:text-blue-400" onclick={() => goToType(stripPrefix(part.element))}>{part.element} →</button>
-													{:else}
-														<code class="text-xs">{part.element}</code>
-													{/if}
-													<Badge color="purple" class="ml-1">element</Badge>
-												{:else if part.type}
-													{#if isKnownType(stripPrefix(part.type))}
-														<button type="button" class="cursor-pointer text-xs text-blue-600 hover:underline dark:text-blue-400" onclick={() => goToType(stripPrefix(part.type))}>{part.type} →</button>
-													{:else}
-														<code class="text-xs">{part.type}</code>
-													{/if}
-												{:else}
-													<code class="text-xs">any</code>
-												{/if}
-											</li>
-										{/each}
-									</ul>
-								{:else}
-									<p class="text-sm text-gray-500">No parts defined</p>
-								{/if}
-								{#if msgRefList.length > 0}
-									<div class="mt-3 border-t border-gray-200 pt-3 dark:border-gray-600">
-										<p class="text-xs font-medium text-gray-500 dark:text-gray-400">Referenced by:</p>
-										<div class="mt-1 flex flex-wrap gap-1">
-											{#each msgRefList as ref}
-												<button
-													type="button"
-													class="cursor-pointer rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-300 dark:hover:bg-green-800"
-													onclick={() => goToOperation(ref.operationName)}
-													title="{ref.role}"
-												>
-													⚡ {ref.operationName} ({ref.role}) →
-												</button>
-											{/each}
-										</div>
-									</div>
-								{/if}
-								</div>
-							</Card>
-						{/each}
-					{:else if $hasDocument}
-						<p class="text-gray-500 dark:text-gray-400">
-							No messages defined in this WSDL document.
-						</p>
-					{:else}
-						<p class="text-gray-500 dark:text-gray-400">
-							Message definitions will appear here once a WSDL is loaded.
-						</p>
-					{/if}
-				</div>
+			<TabItem
+				open={$activeTab === 3}
+				onclick={() => switchTab(3)}
+				title="Messages ({$messages.length})"
+			>
+				<MessagesTab />
 			</TabItem>
 		</Tabs>
 	</Card>

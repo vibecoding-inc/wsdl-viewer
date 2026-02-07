@@ -96,7 +96,9 @@
 
 	{#if parseError}
 		<Alert color="red" class="mb-4">
-			<ExclamationCircleSolid slot="icon" class="h-5 w-5" />
+			{#snippet icon()}
+				<ExclamationCircleSolid class="h-5 w-5" />
+			{/snippet}
 			<span class="font-medium">Parse Error</span>
 			<p class="mt-1 whitespace-pre-wrap text-sm">{parseError}</p>
 		</Alert>
@@ -104,7 +106,9 @@
 
 	{#if parseSuccess}
 		<Alert color="green" class="mb-4">
-			<CheckCircleSolid slot="icon" class="h-5 w-5" />
+			{#snippet icon()}
+				<CheckCircleSolid class="h-5 w-5" />
+			{/snippet}
 			<span class="font-medium">WSDL parsed successfully!</span>
 			<p class="text-sm">View the parsed content in the tabs below.</p>
 		</Alert>

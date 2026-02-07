@@ -9,7 +9,6 @@
 		</span>
 	</NavBrand>
 	<NavUl>
-		<NavLi href="/" active={true}>Home</NavLi>
-		<NavLi href="/">About</NavLi>
+		<NavLi href="/">Home</NavLi>
 	</NavUl>
 </Navbar>

@@ -23,9 +23,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # TODO: Enable type checking once existing type errors are resolved
-      # - name: Type check
-      #   run: npm run check
+      - name: Type check
+        run: npm run check
 
       - name: Build
         run: npm run build
