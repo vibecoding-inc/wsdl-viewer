@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { InfoCircleSolid } from 'flowbite-svelte-icons';
+	import { onMount, onDestroy } from 'svelte';
 	import { 
 		hasDocument, 
 		services, 
@@ -8,9 +9,43 @@
 		messages,
 		targetNamespace,
 		activeTab,
-		navigateTo
+		navigateTo,
+		messageReverseRefs,
+		typeReverseRefs,
+		restoreNavigationState,
+		updateTabHash,
+		parseHash,
+		scrollToElement
 	} from '$lib/stores/wsdl-store';
 	import type { WsdlTypeField } from '$lib/wsdl-parser';
+
+	function handlePopState(event: PopStateEvent) {
+		restoreNavigationState(event.state);
+	}
+
+	function switchTab(tabIndex: number) {
+		activeTab.set(tabIndex);
+		updateTabHash(tabIndex);
+	}
+
+	onMount(() => {
+		window.addEventListener('popstate', handlePopState);
+
+		// Restore state from URL hash on initial load
+		const parsed = parseHash(window.location.hash);
+		if (parsed) {
+			activeTab.set(parsed.tabIndex);
+			if (parsed.elementId) {
+				scrollToElement(parsed.elementId, false);
+			}
+		}
+	});
+
+	onDestroy(() => {
+		if (typeof window !== 'undefined') {
+			window.removeEventListener('popstate', handlePopState);
+		}
+	});
 
 	// Helper to format field name with modifiers (without type)
 	function formatFieldPrefix(field: WsdlTypeField): string {
@@ -110,7 +145,7 @@
 					type="button"
 					class="cursor-pointer border-b-2 px-4 py-2 text-sm font-medium transition-colors"
 					style="color: {$activeTab === tab.idx ? 'var(--theme-accent)' : 'var(--theme-subtext)'}; border-color: {$activeTab === tab.idx ? 'var(--theme-accent)' : 'transparent'};"
-					onclick={() => activeTab.set(tab.idx)}
+					onclick={() => switchTab(tab.idx)}
 				>
 					{tab.label}
 				</button>
@@ -252,6 +287,7 @@
 			<div class="space-y-4">
 				{#if $hasDocument && $types.length > 0}
 					{#each $types as type}
+						{@const typeRefList = $typeReverseRefs.get(type.name) || []}
 						{@const kindColor = type.kind === 'complexType' ? 'var(--theme-accent)' : type.kind === 'simpleType' ? 'var(--theme-green)' : 'var(--theme-purple)'}
 						<div class="rounded-lg border p-5" style="background-color: var(--theme-base); border-color: var(--theme-surface1);">
 							<div id="type-{type.name}">
@@ -307,6 +343,7 @@
 			<div class="space-y-4">
 				{#if $hasDocument && $messages.length > 0}
 					{#each $messages as message}
+						{@const msgRefList = $messageReverseRefs.get(message.name) || []}
 						<div class="rounded-lg border p-5" style="background-color: var(--theme-base); border-color: var(--theme-surface1);">
 							<div id="message-{message.name}">
 							<h6 class="mb-2 text-lg font-bold" style="color: var(--theme-text);">{message.name}</h6>
