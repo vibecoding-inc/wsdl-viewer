@@ -1,5 +1,10 @@
 /**
  * Theme Store - Manages color scheme selection and persistence
+ *
+ * Instead of fighting Flowbite's Tailwind classes with CSS !important
+ * overrides, we apply theme colors as CSS custom properties and use
+ * inline styles in components.  Each theme supplies explicit colors
+ * for every semantic role so contrast is always guaranteed.
  */
 import { writable, derived } from 'svelte/store';
 
@@ -8,29 +13,29 @@ import { writable, derived } from 'svelte/store';
 export interface ThemeColors {
 	/** Page background */
 	base: string;
-	/** Slightly lighter background (cards, surfaces) */
+	/** Card / raised surface background */
 	surface0: string;
 	/** Border / subtle separator */
 	surface1: string;
-	/** Hover / active surface */
+	/** Hover surface / placeholder text */
 	surface2: string;
-	/** Muted/disabled text */
+	/** Muted / secondary text */
 	subtext: string;
-	/** Primary text */
+	/** Primary body text */
 	text: string;
-	/** Primary accent */
+	/** Primary accent color */
 	accent: string;
-	/** Lighter accent (hover) */
-	accentLight: string;
+	/** Text on accent-colored buttons (must contrast with accent) */
+	btnText: string;
 	/** Links */
 	link: string;
-	/** Success/green */
+	/** Success / green semantic color */
 	green: string;
-	/** Warning/yellow */
+	/** Warning / yellow semantic color */
 	yellow: string;
-	/** Error/red */
+	/** Error / red semantic color */
 	red: string;
-	/** Purple accent */
+	/** Purple semantic color */
 	purple: string;
 }
 
@@ -56,7 +61,7 @@ export const themes: Theme[] = [
 			subtext: '#a6adc8',
 			text: '#cdd6f4',
 			accent: '#89b4fa',
-			accentLight: '#b4d0fb',
+			btnText: '#1e1e2e',
 			link: '#89dceb',
 			green: '#a6e3a1',
 			yellow: '#f9e2af',
@@ -70,13 +75,13 @@ export const themes: Theme[] = [
 		isDark: false,
 		colors: {
 			base: '#eff1f5',
-			surface0: '#ccd0da',
+			surface0: '#dce0e8',
 			surface1: '#bcc0cc',
 			surface2: '#acb0be',
 			subtext: '#6c6f85',
 			text: '#4c4f69',
 			accent: '#1e66f5',
-			accentLight: '#7287fd',
+			btnText: '#eff1f5',
 			link: '#179299',
 			green: '#40a02b',
 			yellow: '#df8e1d',
@@ -96,7 +101,7 @@ export const themes: Theme[] = [
 			subtext: '#a5adce',
 			text: '#c6d0f5',
 			accent: '#8caaee',
-			accentLight: '#babbf1',
+			btnText: '#303446',
 			link: '#99d1db',
 			green: '#a6d189',
 			yellow: '#e5c890',
@@ -116,7 +121,7 @@ export const themes: Theme[] = [
 			subtext: '#a5adcb',
 			text: '#cad3f5',
 			accent: '#8aadf4',
-			accentLight: '#b7bdf8',
+			btnText: '#24273a',
 			link: '#91d7e3',
 			green: '#a6da95',
 			yellow: '#eed49f',
@@ -136,7 +141,7 @@ export const themes: Theme[] = [
 			subtext: '#d8dee9',
 			text: '#eceff4',
 			accent: '#88c0d0',
-			accentLight: '#8fbcbb',
+			btnText: '#2e3440',
 			link: '#81a1c1',
 			green: '#a3be8c',
 			yellow: '#ebcb8b',
@@ -156,7 +161,7 @@ export const themes: Theme[] = [
 			subtext: '#bfbfbf',
 			text: '#f8f8f2',
 			accent: '#bd93f9',
-			accentLight: '#d6bcfa',
+			btnText: '#282a36',
 			link: '#8be9fd',
 			green: '#50fa7b',
 			yellow: '#f1fa8c',
@@ -176,7 +181,7 @@ export const themes: Theme[] = [
 			subtext: '#839496',
 			text: '#fdf6e3',
 			accent: '#268bd2',
-			accentLight: '#2aa198',
+			btnText: '#fdf6e3',
 			link: '#2aa198',
 			green: '#859900',
 			yellow: '#b58900',
@@ -196,7 +201,7 @@ export const themes: Theme[] = [
 			subtext: '#657b83',
 			text: '#073642',
 			accent: '#268bd2',
-			accentLight: '#2aa198',
+			btnText: '#fdf6e3',
 			link: '#2aa198',
 			green: '#859900',
 			yellow: '#b58900',
@@ -216,7 +221,7 @@ export const themes: Theme[] = [
 			subtext: '#6b7280',
 			text: '#111827',
 			accent: '#3b82f6',
-			accentLight: '#60a5fa',
+			btnText: '#ffffff',
 			link: '#2563eb',
 			green: '#16a34a',
 			yellow: '#ca8a04',
@@ -236,7 +241,7 @@ export const themes: Theme[] = [
 			subtext: '#9ca3af',
 			text: '#f9fafb',
 			accent: '#3b82f6',
-			accentLight: '#60a5fa',
+			btnText: '#ffffff',
 			link: '#60a5fa',
 			green: '#22c55e',
 			yellow: '#eab308',
@@ -282,7 +287,7 @@ export function applyTheme(theme: Theme): void {
 	root.style.setProperty('--theme-subtext', theme.colors.subtext);
 	root.style.setProperty('--theme-text', theme.colors.text);
 	root.style.setProperty('--theme-accent', theme.colors.accent);
-	root.style.setProperty('--theme-accent-light', theme.colors.accentLight);
+	root.style.setProperty('--theme-btn-text', theme.colors.btnText);
 	root.style.setProperty('--theme-link', theme.colors.link);
 	root.style.setProperty('--theme-green', theme.colors.green);
 	root.style.setProperty('--theme-yellow', theme.colors.yellow);

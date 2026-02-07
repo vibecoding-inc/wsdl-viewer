@@ -1,19 +1,20 @@
 <script lang="ts">
-	import { Navbar, NavBrand, NavUl, NavLi } from 'flowbite-svelte';
 	import ThemeSelector from './ThemeSelector.svelte';
 </script>
 
-<Navbar fluid={true} class="border-b shadow-sm" style="background-color: var(--theme-surface0); border-color: var(--theme-surface1);">
-	<NavBrand href="/">
-		<span class="self-center whitespace-nowrap text-xl font-semibold" style="color: var(--theme-text);">
-			WSDL Viewer
-		</span>
-	</NavBrand>
-	<div class="flex items-center gap-4 md:order-2">
-		<ThemeSelector />
+<nav class="border-b px-4 py-2.5 shadow-sm" style="background-color: var(--theme-surface0); border-color: var(--theme-surface1);">
+	<div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between">
+		<a href="/" class="flex items-center">
+			<span class="self-center whitespace-nowrap text-xl font-semibold" style="color: var(--theme-text);">
+				WSDL Viewer
+			</span>
+		</a>
+		<div class="flex items-center gap-4">
+			<ThemeSelector />
+		</div>
+		<ul class="flex gap-4">
+			<li><a href="/" class="text-sm font-medium" style="color: var(--theme-accent);">Home</a></li>
+			<li><a href="/" class="text-sm font-medium" style="color: var(--theme-subtext);">About</a></li>
+		</ul>
 	</div>
-	<NavUl>
-		<NavLi href="/" active={true}>Home</NavLi>
-		<NavLi href="/">About</NavLi>
-	</NavUl>
-</Navbar>
+</nav>
