@@ -108,12 +108,11 @@ code {
   color: var(--theme-subtext) !important;
 }
 
-/* Badges */
-.bg-blue-100, .dark .dark\:bg-blue-900 {
+/* Badges - use semi-transparent accent on transparent background */
+.bg-blue-100 {
   background-color: color-mix(in srgb, var(--theme-accent) 20%, transparent) !important;
   color: var(--theme-accent) !important;
 }
-.bg-green-100, .dark .dark\:bg-green-900,
 .bg-green-100 {
   background-color: color-mix(in srgb, var(--theme-green) 20%, transparent) !important;
   color: var(--theme-green) !important;
@@ -134,7 +133,7 @@ button[class*="bg-primary"] {
   color: var(--theme-text) !important;
 }
 
-/* Alerts */
+/* Alerts - use accent blended into base for a subtler background */
 .bg-blue-50, .dark .dark\:bg-blue-900 {
   background-color: color-mix(in srgb, var(--theme-accent) 15%, var(--theme-base)) !important;
   color: var(--theme-accent) !important;
