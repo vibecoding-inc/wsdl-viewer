@@ -95,7 +95,7 @@
 		</Alert>
 	{/if}
 
-	<Card size="xl" class="w-full">
+	<Card size="xl" class="w-full p-6">
 		<div class="mb-4 flex items-center justify-between">
 			<h5 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
 				WSDL Document Viewer
@@ -113,7 +113,7 @@
 					{#if $hasDocument && $services.length > 0}
 						{#each $services as service}
 							{@const serviceOps = getServiceOperations(service.name)}
-							<Card size="xl">
+							<Card size="xl" class="p-5">
 								<div id="service-{service.name}">
 								<h6 class="mb-2 text-xl font-bold text-gray-900 dark:text-white">
 									{service.name}
@@ -180,7 +180,7 @@
 				<div class="space-y-4">
 					{#if $hasDocument && $operations.length > 0}
 						{#each $operations as operation}
-							<Card size="xl">
+							<Card size="xl" class="p-5">
 								<div id="operation-{operation.operationName}">
 								<div class="flex items-center gap-2">
 									<h6 class="text-lg font-bold text-gray-900 dark:text-white">{operation.operationName}</h6>
@@ -241,7 +241,7 @@
 				<div class="space-y-4">
 					{#if $hasDocument && $types.length > 0}
 						{#each $types as type}
-							<Card size="xl">
+							<Card size="xl" class="p-5">
 								<div id="type-{type.name}">
 								<div class="mb-2 flex items-center gap-2">
 									<h6 class="text-lg font-bold text-gray-900 dark:text-white">{type.name}</h6>
@@ -295,7 +295,7 @@
 				<div class="space-y-4">
 					{#if $hasDocument && $messages.length > 0}
 						{#each $messages as message}
-							<Card size="xl">
+							<Card size="xl" class="p-5">
 								<div id="message-{message.name}">
 								<h6 class="mb-2 text-lg font-bold text-gray-900 dark:text-white">{message.name}</h6>
 								{#if message.documentation}
