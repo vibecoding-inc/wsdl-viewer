@@ -12,7 +12,7 @@
 		activeTab,
 		navigateTo,
 		messageReverseRefs,
-		typeReverseRefs
+		typeReverseRefs,
 		restoreNavigationState,
 		updateTabHash,
 		parseHash,
