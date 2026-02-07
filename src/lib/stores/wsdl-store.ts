@@ -182,24 +182,93 @@ export const wsdlStore = createWsdlStore();
  */
 export const activeTab: Writable<number> = writable(0);
 
+/** Number of tabs in the viewer (Services, Operations, Types, Messages) */
+const TAB_COUNT = 4;
+
 /**
- * Navigate to a specific tab and scroll to an element
+ * Scroll to an element with visual highlight
+ */
+export function scrollToElement(elementId: string, smooth = true) {
+	requestAnimationFrame(() => {
+		setTimeout(() => {
+			const el = document.getElementById(elementId);
+			if (el) {
+				el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+				el.classList.add('ring-2', 'ring-blue-400');
+				setTimeout(() => el.classList.remove('ring-2', 'ring-blue-400'), 2000);
+			}
+		}, 50);
+	});
+}
+
+/**
+ * Build a URL hash string from tab index and optional element ID
+ */
+function buildHash(tabIndex: number, elementId?: string): string {
+	if (elementId) {
+		return `#tab=${tabIndex}&id=${encodeURIComponent(elementId)}`;
+	}
+	return `#tab=${tabIndex}`;
+}
+
+/**
+ * Parse a URL hash string into tab index and optional element ID
+ */
+export function parseHash(hash: string): { tabIndex: number; elementId?: string } | null {
+	if (!hash || !hash.startsWith('#')) return null;
+	const params = new URLSearchParams(hash.slice(1));
+	const tabStr = params.get('tab');
+	if (tabStr === null) return null;
+	const tabIndex = parseInt(tabStr, 10);
+	if (isNaN(tabIndex) || tabIndex < 0 || tabIndex >= TAB_COUNT) return null;
+	const elementId = params.get('id') ? decodeURIComponent(params.get('id')!) : undefined;
+	return { tabIndex, elementId };
+}
+
+/**
+ * Navigate to a specific tab and scroll to an element.
+ * Pushes a history entry so the browser back button returns to the previous view.
  */
 export function navigateTo(tabIndex: number, elementId?: string) {
+	const hash = buildHash(tabIndex, elementId);
+	history.pushState({ tabIndex, elementId }, '', hash);
 	activeTab.set(tabIndex);
 	if (elementId) {
-		// Wait for tab content to render before scrolling
-		requestAnimationFrame(() => {
-			setTimeout(() => {
-				const el = document.getElementById(elementId);
-				if (el) {
-					el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-					el.classList.add('ring-2', 'ring-blue-400');
-					setTimeout(() => el.classList.remove('ring-2', 'ring-blue-400'), 2000);
-				}
-			}, 50);
-		});
+		scrollToElement(elementId);
 	}
+}
+
+/**
+ * Restore navigation state from a popstate event (browser back/forward).
+ */
+export function restoreNavigationState(state: { tabIndex: number; elementId?: string } | null) {
+	if (state && typeof state.tabIndex === 'number') {
+		activeTab.set(state.tabIndex);
+		if (state.elementId) {
+			scrollToElement(state.elementId, false);
+		}
+	} else {
+		// Try to parse from URL hash as fallback
+		const parsed = parseHash(window.location.hash);
+		if (parsed) {
+			activeTab.set(parsed.tabIndex);
+			if (parsed.elementId) {
+				scrollToElement(parsed.elementId, false);
+			}
+		} else {
+			// No state and no hash means we're back at the initial page
+			activeTab.set(0);
+		}
+	}
+}
+
+/**
+ * Update the URL hash for a tab switch without pushing a new history entry.
+ * Uses replaceState so direct tab clicks don't clutter history.
+ */
+export function updateTabHash(tabIndex: number) {
+	const hash = buildHash(tabIndex);
+	history.replaceState({ tabIndex }, '', hash);
 }
 
 // ============= Derived Stores =============
