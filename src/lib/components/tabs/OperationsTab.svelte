@@ -67,7 +67,7 @@
 											type="button"
 											class="ml-1 cursor-pointer text-xs text-blue-600 hover:underline dark:text-blue-400"
 											onclick={() => {
-												if (operation.input) goToMessage(operation.input.message);
+												goToMessage(operation.input!.message);
 											}}>{operation.input.message} →</button
 										>
 									{:else}
@@ -88,7 +88,7 @@
 											type="button"
 											class="ml-1 cursor-pointer text-xs text-blue-600 hover:underline dark:text-blue-400"
 											onclick={() => {
-												if (operation.output) goToMessage(operation.output.message);
+												goToMessage(operation.output!.message);
 											}}>{operation.output.message} →</button
 										>
 									{:else}
