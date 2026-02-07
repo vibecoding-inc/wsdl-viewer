@@ -356,13 +356,14 @@ export const typeReverseRefs: Readable<Map<string, TypeReverseRef[]>> = derived(
 		const refs = new Map<string, TypeReverseRef[]>();
 		if (!$store.document) return refs;
 
+		const seen = new Set<string>();
 		const addRef = (typeName: string, ref: TypeReverseRef) => {
+			const key = `${typeName}:${ref.kind}:${ref.name}:${ref.detail}`;
+			if (seen.has(key)) return;
+			seen.add(key);
 			const list = refs.get(typeName) || [];
-			// Avoid duplicate entries
-			if (!list.some(r => r.kind === ref.kind && r.name === ref.name && r.detail === ref.detail)) {
-				list.push(ref);
-				refs.set(typeName, list);
-			}
+			list.push(ref);
+			refs.set(typeName, list);
 		};
 
 		// Messages referencing types (via parts)
