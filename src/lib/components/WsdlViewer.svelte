@@ -7,16 +7,24 @@
 		operations, 
 		types, 
 		messages,
-		targetNamespace 
+		targetNamespace,
+		activeTab,
+		navigateTo
 	} from '$lib/stores/wsdl-store';
 	import type { WsdlTypeField } from '$lib/wsdl-parser';
 
-	// Helper to format field info
-	function formatField(field: WsdlTypeField): string {
-		let result = `${field.name}: ${field.type}`;
+	// Helper to format field name with modifiers (without type)
+	function formatFieldPrefix(field: WsdlTypeField): string {
+		let result = field.name;
 		if (field.isAttribute) {
 			result = `@${result}`;
 		}
+		return result;
+	}
+
+	// Helper to format field suffix (optional, array)
+	function formatFieldSuffix(field: WsdlTypeField): string {
+		let result = '';
 		if (field.isOptional) {
 			result += ' (optional)';
 		}
@@ -34,6 +42,47 @@
 			case 'element': return 'purple';
 			default: return 'blue';
 		}
+	}
+
+	// Check if a type name refers to a known type in the document
+	function isKnownType(typeName: string): boolean {
+		return $types.some(t => t.name === typeName);
+	}
+
+	// Check if a message name refers to a known message
+	function isKnownMessage(messageName: string): boolean {
+		return $messages.some(m => m.name === messageName);
+	}
+
+	// Get operations belonging to a service
+	function getServiceOperations(serviceName: string) {
+		return $operations.filter(op => op.serviceName === serviceName);
+	}
+
+	// Navigate to a type definition
+	function goToType(typeName: string) {
+		navigateTo(2, `type-${typeName}`);
+	}
+
+	// Navigate to a message definition
+	function goToMessage(messageName: string) {
+		navigateTo(3, `message-${messageName}`);
+	}
+
+	// Navigate to an operation
+	function goToOperation(operationName: string) {
+		navigateTo(1, `operation-${operationName}`);
+	}
+
+	// Navigate to a service
+	function goToService(serviceName: string) {
+		navigateTo(0, `service-${serviceName}`);
+	}
+
+	// Strip namespace prefix from a type name
+	function stripPrefix(name: string): string {
+		const idx = name.indexOf(':');
+		return idx >= 0 ? name.substring(idx + 1) : name;
 	}
 </script>
 
@@ -59,11 +108,13 @@
 		</div>
 
 		<Tabs>
-			<TabItem open title="Services ({$services.length})">
+			<TabItem open={$activeTab === 0} onclick={() => activeTab.set(0)} title="Services ({$services.length})">
 				<div class="space-y-4">
 					{#if $hasDocument && $services.length > 0}
 						{#each $services as service}
+							{@const serviceOps = getServiceOperations(service.name)}
 							<Card>
+								<div id="service-{service.name}">
 								<h6 class="mb-2 text-xl font-bold text-gray-900 dark:text-white">
 									{service.name}
 								</h6>
@@ -93,6 +144,24 @@
 										{/each}
 									</div>
 								{/if}
+
+								{#if serviceOps.length > 0}
+									<div class="mt-3">
+										<p class="text-sm font-medium text-gray-700 dark:text-gray-300">Operations:</p>
+										<div class="mt-1 flex flex-wrap gap-1">
+											{#each serviceOps as op}
+												<button
+													type="button"
+													class="cursor-pointer rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-300 dark:hover:bg-green-800"
+													onclick={() => goToOperation(op.operationName)}
+												>
+													{op.operationName} →
+												</button>
+											{/each}
+										</div>
+									</div>
+								{/if}
+								</div>
 							</Card>
 						{/each}
 					{:else if $hasDocument}
@@ -107,11 +176,12 @@
 				</div>
 			</TabItem>
 
-			<TabItem title="Operations ({$operations.length})">
+			<TabItem open={$activeTab === 1} onclick={() => activeTab.set(1)} title="Operations ({$operations.length})">
 				<div class="space-y-4">
 					{#if $hasDocument && $operations.length > 0}
 						{#each $operations as operation}
 							<Card>
+								<div id="operation-{operation.operationName}">
 								<div class="flex items-center gap-2">
 									<h6 class="text-lg font-bold text-gray-900 dark:text-white">{operation.operationName}</h6>
 									<Badge color="green">SOAP</Badge>
@@ -122,11 +192,36 @@
 									</p>
 								{/if}
 								<div class="mt-2 space-y-1 text-sm text-gray-700 dark:text-gray-400">
-									<p>Service: <code class="text-xs">{operation.serviceName}</code></p>
+									<p>Service: <button type="button" class="cursor-pointer text-blue-600 hover:underline dark:text-blue-400" onclick={() => goToService(operation.serviceName)}><code class="text-xs">{operation.serviceName}</code></button></p>
 									<p>Port: <code class="text-xs">{operation.portName}</code></p>
 									{#if operation.soapAction}
 										<p>SOAP Action: <code class="text-xs">{operation.soapAction}</code></p>
 									{/if}
+								</div>
+								{#if operation.input || operation.output}
+									<div class="mt-3 space-y-2">
+										{#if operation.input}
+											<div class="rounded border border-gray-200 p-2 dark:border-gray-600">
+												<span class="text-xs font-medium text-gray-500 dark:text-gray-400">Input:</span>
+												{#if isKnownMessage(operation.input.message)}
+													<button type="button" class="ml-1 cursor-pointer text-xs text-blue-600 hover:underline dark:text-blue-400" onclick={() => goToMessage(operation.input?.message || '')}>{operation.input.message} →</button>
+												{:else}
+													<code class="ml-1 text-xs">{operation.input.message}</code>
+												{/if}
+											</div>
+										{/if}
+										{#if operation.output}
+											<div class="rounded border border-gray-200 p-2 dark:border-gray-600">
+												<span class="text-xs font-medium text-gray-500 dark:text-gray-400">Output:</span>
+												{#if isKnownMessage(operation.output.message)}
+													<button type="button" class="ml-1 cursor-pointer text-xs text-blue-600 hover:underline dark:text-blue-400" onclick={() => goToMessage(operation.output?.message || '')}>{operation.output.message} →</button>
+												{:else}
+													<code class="ml-1 text-xs">{operation.output.message}</code>
+												{/if}
+											</div>
+										{/if}
+									</div>
+								{/if}
 								</div>
 							</Card>
 						{/each}
@@ -142,11 +237,12 @@
 				</div>
 			</TabItem>
 
-			<TabItem title="Types ({$types.length})">
+			<TabItem open={$activeTab === 2} onclick={() => activeTab.set(2)} title="Types ({$types.length})">
 				<div class="space-y-4">
 					{#if $hasDocument && $types.length > 0}
 						{#each $types as type}
 							<Card>
+								<div id="type-{type.name}">
 								<div class="mb-2 flex items-center gap-2">
 									<h6 class="text-lg font-bold text-gray-900 dark:text-white">{type.name}</h6>
 									<Badge color={getTypeKindColor(type.kind)}>{type.kind}</Badge>
@@ -158,7 +254,7 @@
 								{/if}
 								{#if type.base}
 									<p class="mb-2 text-sm text-gray-600 dark:text-gray-400">
-										Extends: <code class="text-xs">{type.base}</code>
+										Extends: {#if isKnownType(stripPrefix(type.base))}<button type="button" class="cursor-pointer text-blue-600 hover:underline dark:text-blue-400" onclick={() => goToType(stripPrefix(type.base || ''))}><code class="text-xs">{type.base}</code> →</button>{:else}<code class="text-xs">{type.base}</code>{/if}
 									</p>
 								{/if}
 								{#if type.restrictions?.enumeration}
@@ -174,10 +270,13 @@
 								{#if type.fields.length > 0}
 									<ul class="list-inside list-disc space-y-1 text-sm text-gray-700 dark:text-gray-400">
 										{#each type.fields as field}
-											<li><code class="text-xs">{formatField(field)}</code></li>
+											<li>
+												<code class="text-xs">{formatFieldPrefix(field)}: </code>{#if isKnownType(stripPrefix(field.type))}<button type="button" class="cursor-pointer text-xs text-blue-600 hover:underline dark:text-blue-400" onclick={() => goToType(stripPrefix(field.type))}>{field.type} →</button>{:else}<code class="text-xs">{field.type}</code>{/if}<code class="text-xs">{formatFieldSuffix(field)}</code>
+											</li>
 										{/each}
 									</ul>
 								{/if}
+								</div>
 							</Card>
 						{/each}
 					{:else if $hasDocument}
@@ -192,11 +291,12 @@
 				</div>
 			</TabItem>
 
-			<TabItem title="Messages ({$messages.length})">
+			<TabItem open={$activeTab === 3} onclick={() => activeTab.set(3)} title="Messages ({$messages.length})">
 				<div class="space-y-4">
 					{#if $hasDocument && $messages.length > 0}
 						{#each $messages as message}
 							<Card>
+								<div id="message-{message.name}">
 								<h6 class="mb-2 text-lg font-bold text-gray-900 dark:text-white">{message.name}</h6>
 								{#if message.documentation}
 									<p class="mb-2 text-sm italic text-gray-600 dark:text-gray-400">
@@ -208,17 +308,31 @@
 										{#each message.parts as part}
 											<li>
 												<code class="text-xs">
-													{part.name}: {part.type || part.element || 'any'}
-													{#if part.element}
-														<Badge color="purple" class="ml-1">element</Badge>
-													{/if}
+													{part.name}: 
 												</code>
+												{#if part.element}
+													{#if isKnownType(stripPrefix(part.element))}
+														<button type="button" class="cursor-pointer text-xs text-blue-600 hover:underline dark:text-blue-400" onclick={() => goToType(stripPrefix(part.element || ''))}>{part.element} →</button>
+													{:else}
+														<code class="text-xs">{part.element}</code>
+													{/if}
+													<Badge color="purple" class="ml-1">element</Badge>
+												{:else if part.type}
+													{#if isKnownType(stripPrefix(part.type))}
+														<button type="button" class="cursor-pointer text-xs text-blue-600 hover:underline dark:text-blue-400" onclick={() => goToType(stripPrefix(part.type || ''))}>{part.type} →</button>
+													{:else}
+														<code class="text-xs">{part.type}</code>
+													{/if}
+												{:else}
+													<code class="text-xs">any</code>
+												{/if}
 											</li>
 										{/each}
 									</ul>
 								{:else}
 									<p class="text-sm text-gray-500">No parts defined</p>
 								{/if}
+								</div>
 							</Card>
 						{/each}
 					{:else if $hasDocument}

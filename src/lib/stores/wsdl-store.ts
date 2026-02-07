@@ -1,11 +1,12 @@
 /**
  * WSDL Store - Global state management for parsed WSDL documents
  */
-import { writable, derived, get, type Readable } from 'svelte/store';
+import { writable, derived, get, type Readable, type Writable } from 'svelte/store';
 import type {
 	WsdlDocument,
 	WsdlService,
 	WsdlOperation,
+	WsdlOperationMessage,
 	WsdlType,
 	WsdlMessage,
 	ParseResult
@@ -174,6 +175,34 @@ function createWsdlStore() {
 
 export const wsdlStore = createWsdlStore();
 
+// ============= Active Tab Store =============
+
+/**
+ * Store for the currently active tab in the viewer
+ */
+export const activeTab: Writable<number> = writable(0);
+
+/**
+ * Navigate to a specific tab and scroll to an element
+ */
+export function navigateTo(tabIndex: number, elementId?: string) {
+	activeTab.set(tabIndex);
+	if (elementId) {
+		// Use requestAnimationFrame to wait for tab content to render
+		requestAnimationFrame(() => {
+			requestAnimationFrame(() => {
+				const el = document.getElementById(elementId);
+				if (el) {
+					el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+					// Brief highlight effect
+					el.classList.add('ring-2', 'ring-blue-400');
+					setTimeout(() => el.classList.remove('ring-2', 'ring-blue-400'), 2000);
+				}
+			});
+		});
+	}
+}
+
 // ============= Derived Stores =============
 
 /**
@@ -193,6 +222,8 @@ export const operations: Readable<Array<{
 	operationName: string;
 	soapAction?: string;
 	documentation?: string;
+	input?: WsdlOperationMessage;
+	output?: WsdlOperationMessage;
 }>> = derived(
 	wsdlStore,
 	$store => {
