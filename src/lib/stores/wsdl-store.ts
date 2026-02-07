@@ -26,6 +26,39 @@ export interface WsdlStoreState {
 
 // ============= Main Store =============
 
+const STORAGE_KEY = 'wsdl-viewer-rawxml';
+
+function saveToLocalStorage(xmlString: string) {
+	try {
+		if (typeof window !== 'undefined') {
+			localStorage.setItem(STORAGE_KEY, xmlString);
+		}
+	} catch {
+		// Ignore storage errors (quota exceeded, etc.)
+	}
+}
+
+function loadFromLocalStorage(): string | null {
+	try {
+		if (typeof window !== 'undefined') {
+			return localStorage.getItem(STORAGE_KEY);
+		}
+	} catch {
+		// Ignore storage errors
+	}
+	return null;
+}
+
+function clearLocalStorage() {
+	try {
+		if (typeof window !== 'undefined') {
+			localStorage.removeItem(STORAGE_KEY);
+		}
+	} catch {
+		// Ignore storage errors
+	}
+}
+
 function createWsdlStore() {
 	const initialState: WsdlStoreState = {
 		isLoading: false,
@@ -50,6 +83,7 @@ function createWsdlStore() {
 			const result = parseWsdl(xmlString);
 
 			if (result.success && result.document) {
+				saveToLocalStorage(xmlString);
 				set({
 					isLoading: false,
 					hasDocument: true,
@@ -156,16 +190,30 @@ function createWsdlStore() {
 		},
 
 		/**
-		 * Clear the current document
+		 * Restore WSDL from localStorage if available
+		 */
+		restoreFromStorage(): boolean {
+			const savedXml = loadFromLocalStorage();
+			if (savedXml) {
+				const result = this.parseXml(savedXml);
+				return result.success;
+			}
+			return false;
+		},
+
+		/**
+		 * Clear the current document and localStorage
 		 */
 		clear() {
+			clearLocalStorage();
 			set(initialState);
 		},
 
 		/**
-		 * Reset the store to initial state
+		 * Reset the store to initial state and clear localStorage
 		 */
 		reset() {
+			clearLocalStorage();
 			set(initialState);
 		}
 	};

@@ -1,28 +1,26 @@
 <script lang="ts">
-	import { Card, Button, Fileupload, Label, Textarea, Alert, Spinner } from 'flowbite-svelte';
-	import { ExclamationCircleSolid, CheckCircleSolid } from 'flowbite-svelte-icons';
-	import { wsdlStore, isLoading, errors as storeErrors } from '$lib/stores/wsdl-store';
+	import { Modal, Button, Fileupload, Label, Textarea, Alert, Spinner } from 'flowbite-svelte';
+	import { ExclamationCircleSolid } from 'flowbite-svelte-icons';
+	import { wsdlStore, isLoading, hasDocument } from '$lib/stores/wsdl-store';
 
-	let wsdlFile: FileList | undefined;
-	let wsdlUrl = '';
-	let wsdlText = '';
-	let parseSuccess = false;
-	let parseError = '';
+	let { open = $bindable(false) } = $props();
+
+	let wsdlFile: FileList | undefined = $state();
+	let wsdlUrl = $state('');
+	let wsdlText = $state('');
+	let parseError = $state('');
 
 	async function handleFileUpload() {
 		if (wsdlFile && wsdlFile[0]) {
-			parseSuccess = false;
 			parseError = '';
 			
 			const result = await wsdlStore.loadFromFile(wsdlFile[0]);
 			
 			if (result.success && result.document) {
-				wsdlText = result.document.rawXml;
-				parseSuccess = true;
-				parseError = '';
+				open = false;
+				resetForm();
 			} else {
 				parseError = result.errors.join('\n');
-				parseSuccess = false;
 			}
 		}
 	}
@@ -33,18 +31,15 @@
 			return;
 		}
 		
-		parseSuccess = false;
 		parseError = '';
 		
 		const result = await wsdlStore.loadFromUrl(wsdlUrl);
 		
 		if (result.success && result.document) {
-			wsdlText = result.document.rawXml;
-			parseSuccess = true;
-			parseError = '';
+			open = false;
+			resetForm();
 		} else {
 			parseError = result.errors.join('\n');
-			parseSuccess = false;
 		}
 	}
 
@@ -54,39 +49,27 @@
 			return;
 		}
 		
-		parseSuccess = false;
 		parseError = '';
 		
 		const result = wsdlStore.parseXml(wsdlText);
 		
 		if (result.success) {
-			parseSuccess = true;
-			parseError = '';
+			open = false;
+			resetForm();
 		} else {
 			parseError = result.errors.join('\n');
-			parseSuccess = false;
 		}
 	}
-	
-	function handleClear() {
+
+	function resetForm() {
 		wsdlFile = undefined;
 		wsdlUrl = '';
 		wsdlText = '';
-		parseSuccess = false;
 		parseError = '';
-		wsdlStore.clear();
 	}
 </script>
 
-<Card size="xl" class="w-full">
-	<div class="mb-4 flex items-center justify-between">
-		<h5 class="text-xl font-bold text-gray-900 dark:text-white">Load WSDL Document</h5>
-		{#if parseSuccess}
-			<Button color="alternative" size="sm" onclick={handleClear}>Clear</Button>
-		{/if}
-	</div>
-
-	<!-- Status Messages -->
+<Modal title="Load WSDL Document" bind:open size="lg" dismissable={$hasDocument} class="z-50">
 	{#if $isLoading}
 		<div class="mb-4 flex items-center gap-2 text-blue-600">
 			<Spinner size="4" />
@@ -102,16 +85,7 @@
 		</Alert>
 	{/if}
 
-	{#if parseSuccess}
-		<Alert color="green" class="mb-4">
-			<CheckCircleSolid slot="icon" class="h-5 w-5" />
-			<span class="font-medium">WSDL parsed successfully!</span>
-			<p class="text-sm">View the parsed content in the tabs below.</p>
-		</Alert>
-	{/if}
-
 	<div class="space-y-6">
-		<!-- File Upload Section -->
 		<div>
 			<Label for="file" class="mb-2">Upload WSDL File</Label>
 			<Fileupload
@@ -124,7 +98,6 @@
 			/>
 		</div>
 
-		<!-- URL Input Section -->
 		<div>
 			<Label for="url" class="mb-2">Or Load from URL</Label>
 			<div class="flex gap-2">
@@ -140,7 +113,6 @@
 			</div>
 		</div>
 
-		<!-- Text Input Section -->
 		<div>
 			<Label for="text" class="mb-2">Or Paste WSDL Content</Label>
 			<Textarea
@@ -154,4 +126,4 @@
 			<Button onclick={handleParseText} class="mt-2" disabled={$isLoading}>Parse</Button>
 		</div>
 	</div>
-</Card>
+</Modal>

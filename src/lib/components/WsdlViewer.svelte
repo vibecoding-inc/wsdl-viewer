@@ -7,7 +7,6 @@
 		operations, 
 		types, 
 		messages,
-		targetNamespace,
 		activeTab,
 		navigateTo
 	} from '$lib/stores/wsdl-store';
@@ -91,22 +90,11 @@
 		<Alert color="blue" class="mb-4">
 			<InfoCircleSolid slot="icon" class="h-5 w-5" />
 			<span class="font-medium">No WSDL loaded</span>
-			Please upload a WSDL file or paste WSDL content to view details.
+			Click "Load WSDL" to get started.
 		</Alert>
 	{/if}
 
 	<Card size="xl" class="w-full">
-		<div class="mb-4 flex items-center justify-between">
-			<h5 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-				WSDL Document Viewer
-			</h5>
-			{#if $hasDocument && $targetNamespace}
-				<code class="rounded bg-gray-100 px-2 py-1 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-					{$targetNamespace}
-				</code>
-			{/if}
-		</div>
-
 		<Tabs>
 			<TabItem open={$activeTab === 0} onclick={() => activeTab.set(0)} title="Services ({$services.length})">
 				<div class="space-y-4">
