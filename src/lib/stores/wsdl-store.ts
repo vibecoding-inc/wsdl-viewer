@@ -389,6 +389,7 @@ export interface TypeReverseRef {
 	kind: 'message' | 'operation' | 'type';
 	name: string;
 	detail?: string; // e.g. "input", "output", "field: fieldName"
+	indirect?: boolean; // true for transitive references (e.g. operation → message → type)
 }
 
 // ============= Reverse Reference Stores =============
@@ -455,7 +456,7 @@ export const typeReverseRefs: Readable<Map<string, TypeReverseRef[]>> = derived(
 					for (const part of msg.parts) {
 						const typeName = part.element || part.type;
 						if (typeName) {
-							addRef(typeName, { kind: 'operation', name: op.operationName, detail: 'input' });
+							addRef(typeName, { kind: 'operation', name: op.operationName, detail: 'input', indirect: true });
 						}
 					}
 				}
@@ -466,7 +467,7 @@ export const typeReverseRefs: Readable<Map<string, TypeReverseRef[]>> = derived(
 					for (const part of msg.parts) {
 						const typeName = part.element || part.type;
 						if (typeName) {
-							addRef(typeName, { kind: 'operation', name: op.operationName, detail: 'output' });
+							addRef(typeName, { kind: 'operation', name: op.operationName, detail: 'output', indirect: true });
 						}
 					}
 				}
@@ -484,6 +485,11 @@ export const typeReverseRefs: Readable<Map<string, TypeReverseRef[]>> = derived(
 					addRef(fieldType, { kind: 'type', name: type.name, detail: `field: ${field.name}` });
 				}
 			}
+		}
+
+		// Sort: direct references first, indirect references after
+		for (const [typeName, list] of refs) {
+			list.sort((a, b) => (a.indirect ? 1 : 0) - (b.indirect ? 1 : 0));
 		}
 
 		return refs;

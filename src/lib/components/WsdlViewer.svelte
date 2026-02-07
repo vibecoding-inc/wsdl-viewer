@@ -320,27 +320,27 @@
 												{#if ref.kind === 'operation'}
 													<button
 														type="button"
-														class="cursor-pointer rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-300 dark:hover:bg-green-800"
+														class="cursor-pointer rounded border px-2 py-0.5 text-xs font-medium {ref.indirect ? 'border-green-300 text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-950' : 'border-transparent bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-300 dark:hover:bg-green-800'}"
 														onclick={() => goToOperation(ref.name)}
-														title="{ref.detail}"
+														title="{ref.detail}{ref.indirect ? ' (indirect)' : ''}"
 													>
 														⚡ {ref.name} ({ref.detail}) →
 													</button>
 												{:else if ref.kind === 'message'}
 													<button
 														type="button"
-														class="cursor-pointer rounded bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-800 hover:bg-orange-200 dark:bg-orange-900 dark:text-orange-300 dark:hover:bg-orange-800"
+														class="cursor-pointer rounded border px-2 py-0.5 text-xs font-medium {ref.indirect ? 'border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-950' : 'border-transparent bg-orange-100 text-orange-800 hover:bg-orange-200 dark:bg-orange-900 dark:text-orange-300 dark:hover:bg-orange-800'}"
 														onclick={() => goToMessage(ref.name)}
-														title="{ref.detail}"
+														title="{ref.detail}{ref.indirect ? ' (indirect)' : ''}"
 													>
 														✉ {ref.name} ({ref.detail}) →
 													</button>
 												{:else if ref.kind === 'type'}
 													<button
 														type="button"
-														class="cursor-pointer rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:hover:bg-blue-800"
+														class="cursor-pointer rounded border px-2 py-0.5 text-xs font-medium {ref.indirect ? 'border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-950' : 'border-transparent bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:hover:bg-blue-800'}"
 														onclick={() => goToType(ref.name)}
-														title="{ref.detail}"
+														title="{ref.detail}{ref.indirect ? ' (indirect)' : ''}"
 													>
 														🔷 {ref.name} ({ref.detail}) →
 													</button>
