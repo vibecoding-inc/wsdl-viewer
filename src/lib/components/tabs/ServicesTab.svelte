@@ -44,7 +44,7 @@
 							</h4>
 							<div class="space-y-2">
 								{#each service.ports as port (port.name)}
-									<div class="rounded-md border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-600 dark:bg-gray-750 dark:bg-gray-900/30">
+									<div class="rounded-md border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-600 dark:bg-gray-900/30">
 										<div class="flex items-center gap-2">
 											<span class="font-medium text-gray-900 dark:text-white">{port.name}</span>
 											<span class="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-blue-600/20 ring-inset dark:bg-blue-900/30 dark:text-blue-300 dark:ring-blue-500/30">
