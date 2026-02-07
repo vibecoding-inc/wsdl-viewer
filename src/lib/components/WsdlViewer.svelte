@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Card, Tabs, TabItem, Badge, Alert } from 'flowbite-svelte';
 	import { InfoCircleSolid } from 'flowbite-svelte-icons';
+	import { onMount, onDestroy } from 'svelte';
 	import { 
 		hasDocument, 
 		services, 
@@ -12,8 +13,40 @@
 		navigateTo,
 		messageReverseRefs,
 		typeReverseRefs
+		restoreNavigationState,
+		updateTabHash,
+		parseHash,
+		scrollToElement
 	} from '$lib/stores/wsdl-store';
 	import type { WsdlTypeField } from '$lib/wsdl-parser';
+
+	function handlePopState(event: PopStateEvent) {
+		restoreNavigationState(event.state);
+	}
+
+	function switchTab(tabIndex: number) {
+		activeTab.set(tabIndex);
+		updateTabHash(tabIndex);
+	}
+
+	onMount(() => {
+		window.addEventListener('popstate', handlePopState);
+
+		// Restore state from URL hash on initial load
+		const parsed = parseHash(window.location.hash);
+		if (parsed) {
+			activeTab.set(parsed.tabIndex);
+			if (parsed.elementId) {
+				scrollToElement(parsed.elementId, false);
+			}
+		}
+	});
+
+	onDestroy(() => {
+		if (typeof window !== 'undefined') {
+			window.removeEventListener('popstate', handlePopState);
+		}
+	});
 
 	// Helper to format field name with modifiers (without type)
 	function formatFieldPrefix(field: WsdlTypeField): string {
@@ -97,7 +130,7 @@
 		</Alert>
 	{/if}
 
-	<Card size="xl" class="w-full">
+	<Card size="xl" class="w-full p-6">
 		<div class="mb-4 flex items-center justify-between">
 			<h5 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
 				WSDL Document Viewer
@@ -110,12 +143,12 @@
 		</div>
 
 		<Tabs>
-			<TabItem open={$activeTab === 0} onclick={() => activeTab.set(0)} title="Services ({$services.length})">
+			<TabItem open={$activeTab === 0} onclick={() => switchTab(0)} title="Services ({$services.length})">
 				<div class="space-y-4">
 					{#if $hasDocument && $services.length > 0}
 						{#each $services as service}
 							{@const serviceOps = getServiceOperations(service.name)}
-							<Card size="xl">
+							<Card size="xl" class="p-5">
 								<div id="service-{service.name}">
 								<h6 class="mb-2 text-xl font-bold text-gray-900 dark:text-white">
 									{service.name}
@@ -178,11 +211,11 @@
 				</div>
 			</TabItem>
 
-			<TabItem open={$activeTab === 1} onclick={() => activeTab.set(1)} title="Operations ({$operations.length})">
+			<TabItem open={$activeTab === 1} onclick={() => switchTab(1)} title="Operations ({$operations.length})">
 				<div class="space-y-4">
 					{#if $hasDocument && $operations.length > 0}
 						{#each $operations as operation}
-							<Card size="xl">
+							<Card size="xl" class="p-5">
 								<div id="operation-{operation.operationName}">
 								<div class="flex items-center gap-2">
 									<h6 class="text-lg font-bold text-gray-900 dark:text-white">{operation.operationName}</h6>
@@ -239,12 +272,12 @@
 				</div>
 			</TabItem>
 
-			<TabItem open={$activeTab === 2} onclick={() => activeTab.set(2)} title="Types ({$types.length})">
+			<TabItem open={$activeTab === 2} onclick={() => switchTab(2)} title="Types ({$types.length})">
 				<div class="space-y-4">
 					{#if $hasDocument && $types.length > 0}
 						{#each $types as type}
 							{@const typeRefList = $typeReverseRefs.get(type.name) || []}
-							<Card size="xl">
+							<Card size="xl" class="p-5">
 								<div id="type-{type.name}">
 								<div class="mb-2 flex items-center gap-2">
 									<h6 class="text-lg font-bold text-gray-900 dark:text-white">{type.name}</h6>
@@ -331,12 +364,12 @@
 				</div>
 			</TabItem>
 
-			<TabItem open={$activeTab === 3} onclick={() => activeTab.set(3)} title="Messages ({$messages.length})">
+			<TabItem open={$activeTab === 3} onclick={() => switchTab(3)} title="Messages ({$messages.length})">
 				<div class="space-y-4">
 					{#if $hasDocument && $messages.length > 0}
 						{#each $messages as message}
 							{@const msgRefList = $messageReverseRefs.get(message.name) || []}
-							<Card size="xl">
+							<Card size="xl" class="p-5">
 								<div id="message-{message.name}">
 								<h6 class="mb-2 text-lg font-bold text-gray-900 dark:text-white">{message.name}</h6>
 								{#if message.documentation}

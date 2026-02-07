@@ -78,7 +78,7 @@
 	}
 </script>
 
-<Card size="xl" class="w-full">
+<Card size="xl" class="w-full p-6">
 	<div class="mb-4 flex items-center justify-between">
 		<h5 class="text-xl font-bold text-gray-900 dark:text-white">Load WSDL Document</h5>
 		{#if parseSuccess}
